@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include <ostream>
 #include <vector>
 
@@ -26,12 +25,12 @@ class Storage3D {
     }
 
     void initialize() {
-        const std::size_t kmin = std::round(0.25 * zsize_);
-        const std::size_t kmax = std::round(0.75 * zsize_);
-        const std::size_t jmin = std::round(0.25 * ysize_);
-        const std::size_t jmax = std::round(0.75 * ysize_);
-        const std::size_t imin = std::round(0.25 * xsize_);
-        const std::size_t imax = std::round(0.75 * xsize_);
+        const std::size_t kmin = static_cast<T>(0.25 * zsize_ + 0.5);
+        const std::size_t kmax = static_cast<T>(0.75 * zsize_ + 0.5);
+        const std::size_t jmin = static_cast<T>(0.25 * ysize_ + 0.5);
+        const std::size_t jmax = static_cast<T>(0.75 * ysize_ + 0.5);
+        const std::size_t imin = static_cast<T>(0.25 * xsize_ + 0.5);
+        const std::size_t imax = static_cast<T>(0.75 * xsize_ + 0.5);
 
         for(std::size_t k = kmin; k <= kmax; ++k)
             for(std::size_t j = jmin; j <= jmax; ++j)

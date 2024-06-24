@@ -121,16 +121,25 @@ int main(int argc, char const **argv) {
 
     if(argc == 5) {
         std::size_t x, y, z, iter;
-        std::istringstream x_ss(argv[1]), y_ss(argv[2]), z_ss(argv[3]), iter_ss(argv[4]);
 
-        x_ss >> x;
-        y_ss >> y;
-        z_ss >> z;
-        iter_ss >> iter;
+        {
+            std::istringstream x_ss(argv[1]);    x_ss >> x;
+            std::istringstream y_ss(argv[2]);    y_ss >> y;
+            std::istringstream z_ss(argv[3]);    z_ss >> z;
+            std::istringstream iter_ss(argv[4]); iter_ss >> iter;
+
+            if(x_ss.fail() || y_ss.fail() || z_ss.fail() || iter_ss.fail()) {
+                std::cerr << "Input syntax: ./main <nx> <ny> <nz> <iter>\n";
+                return EXIT_FAILURE;
+            }
+        }
 
         run_simulation<double>(x, y, z, iter, halo);
     }
-    else std::cerr << "Input syntax: ./main <nx> <ny> <nz> <iter>\n";
+    else {
+        std::cerr << "Input syntax: ./main <nx> <ny> <nz> <iter>\n";
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
