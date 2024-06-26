@@ -3,7 +3,6 @@
 
 #include <chrono>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 
 
@@ -22,7 +21,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     T *u, *v, *u_host;
     std::ofstream in_os, out_os;
 
-    cudaMallocHost(&u_host, xsize * ysize * zsize * sizeof(T));
+    check(cudaMallocHost(&u_host, xsize * ysize * zsize * sizeof(T)));
     host::initialise(u_host, xsize, ysize, zsize);
 
     in_os.open("in_field.csv");
@@ -31,29 +30,29 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     const time_point begin = std::chrono::steady_clock::now();
 
-    cudaStreamCreate(&stream);
-    cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream);
-    cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream);
-    cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream);
+    check(cudaStreamCreate(&stream));
+    check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
+    check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
+    check(cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream));
 
     for(std::size_t i = 0; i < iters; ++i) {
         device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmin, xsize, ysize);
         device::update_interior(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
     }
 
-    cudaMemcpyAsync(u_host, u, xsize * ysize * zsize * sizeof(T), cudaMemcpyDeviceToHost, stream);
-    cudaFreeAsync(u, stream);
-    cudaFreeAsync(v, stream);
-    cudaStreamDestroy(stream);
+    check(cudaMemcpyAsync(u_host, u, xsize * ysize * zsize * sizeof(T), cudaMemcpyDeviceToHost, stream));
+    check(cudaFreeAsync(u, stream));
+    check(cudaFreeAsync(v, stream));
+    check(cudaStreamDestroy(stream));
 
-    cudaDeviceSynchronize();
+    check(cudaDeviceSynchronize());
     const time_point end = std::chrono::steady_clock::now();
 
     out_os.open("out_field.csv");
     host::write_file(out_os, u_host, xsize, ysize, zsize);
     out_os.close();
 
-    cudaFreeHost(u_host);
+    check(cudaFreeHost(u_host));
 
     return std::chrono::duration<double, std::milli>(end - begin).count() / 1000;
 }
