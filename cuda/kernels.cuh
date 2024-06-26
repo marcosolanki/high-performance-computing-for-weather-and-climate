@@ -7,72 +7,72 @@ namespace kernels {
 
 template<typename T>
 __global__ void update_south(T *u, std::size_t xmin, std::size_t xmax, std::size_t ymin,
-                             std::size_t zmin, std::size_t yint, std::size_t xsize, std::size_t ysize) {
+                             std::size_t zmax, std::size_t yint, std::size_t xsize, std::size_t ysize) {
 
     // Ranges:
     // i in [xmin, xmax[
     // j in [0, ymin[
-    // k in [0, zmin[
+    // k in [0, zmax[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmin;
     const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y;
     const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
 
-    if(i < xmax && j < ymin && k < zmin)
+    if(i < xmax && j < ymin && k < zmax)
         u[index(i, j, k, xsize, ysize)] = u[index(i, j + yint, k, xsize, ysize)];
 }
 
 
 template<typename T>
 __global__ void update_north(T *u, std::size_t xmin, std::size_t xmax, std::size_t ymax,
-                             std::size_t zmin, std::size_t yint, std::size_t xsize, std::size_t ysize) {
+                             std::size_t zmax, std::size_t yint, std::size_t xsize, std::size_t ysize) {
 
     // Ranges:
     // i in [xmin, xmax[
     // j in [ymax, ysize[
-    // k in [0, zmin[
+    // k in [0, zmax[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmin;
     const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y + ymax;
     const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
 
-    if(i < xmax && j < ysize && k < zmin)
+    if(i < xmax && j < ysize && k < zmax)
         u[index(i, j, k, xsize, ysize)] = u[index(i, j - yint, k, xsize, ysize)];
 }
 
 
 template<typename T>
 __global__ void update_west(T *u, std::size_t xmin, std::size_t ymin, std::size_t ymax,
-                            std::size_t zmin, std::size_t xint, std::size_t xsize, std::size_t ysize) {
+                            std::size_t zmax, std::size_t xint, std::size_t xsize, std::size_t ysize) {
 
     // Ranges:
     // i in [0, xmin[
     // j in [ymin, ymax[
-    // k in [0, zmin[
+    // k in [0, zmax[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x;
     const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y + ymin;
     const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
 
-    if(i < xmin && j < ymax && k < zmin)
+    if(i < xmin && j < ymax && k < zmax)
         u[index(i, j, k, xsize, ysize)] = u[index(i + xint, j, k, xsize, ysize)];
 }
 
 
 template<typename T>
 __global__ void update_east(T *u, std::size_t xmax, std::size_t ymin, std::size_t ymax,
-                            std::size_t zmin, std::size_t xint, std::size_t xsize, std::size_t ysize) {
+                            std::size_t zmax, std::size_t xint, std::size_t xsize, std::size_t ysize) {
 
     // Ranges:
     // i in [xmax, xsize[
     // j in [ymin, ymax[
-    // k in [0, zmin[
+    // k in [0, zmax[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmax;
     const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y + ymin;
     const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
 
-    if(i < xsize && j < ymax && k < zmin)
+    if(i < xsize && j < ymax && k < zmax)
         u[index(i, j, k, xsize, ysize)] = u[index(i - xint, j, k, xsize, ysize)];
 }
 
@@ -100,7 +100,7 @@ __global__ void biharmonic_operator(const T *u, T *v, std::size_t xmin, std::siz
                 +  u[index(i - 1, j + 1, k, xsize, ysize)] + u[index(i - 1, j - 1, k, xsize, ysize)])
             - 8 * (u[index(i + 1, j, k, xsize, ysize)] + u[index(i, j + 1, k, xsize, ysize)]
                 +  u[index(i - 1, j, k, xsize, ysize)] + u[index(i, j - 1, k, xsize, ysize)])
-           + 20 * u[index(i, j, k, xsize, ysize)];
+           + 20 *  u[index(i, j, k, xsize, ysize)];
 }
 
 

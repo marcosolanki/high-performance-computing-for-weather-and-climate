@@ -15,7 +15,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     constexpr T alpha = static_cast<T>(1) / 32;
     const std::size_t xmin = halo, xmax = xsize - halo;
     const std::size_t ymin = halo, ymax = ysize - halo;
-    const std::size_t zmin = 0, zmax = zsize;
+    const std::size_t zmax = zsize;
 
     cudaStream_t stream;
     T *u, *v, *u_host;
@@ -36,7 +36,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     check(cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream));
 
     for(std::size_t i = 0; i < iters; ++i) {
-        device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmin, xsize, ysize);
+        device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
         device::update_interior(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
     }
 

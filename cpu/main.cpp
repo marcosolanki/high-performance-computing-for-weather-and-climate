@@ -17,25 +17,25 @@ void update_halo(Storage3D<T> &in_field) {
     const std::size_t y_interior = in_field.y_max() - in_field.y_min();
 
     // Bottom edge (without corners):
-    for(std::size_t k = 0; k < in_field.z_min(); ++k)
+    for(std::size_t k = 0; k < in_field.z_max(); ++k)
         for(std::size_t j = 0; j < in_field.y_min(); ++j)
             for(std::size_t i = in_field.x_min(); i < in_field.x_max(); ++i)
                 in_field(i, j, k) = in_field(i, j + y_interior, k);
 
     // Top edge (without corners):
-    for(std::size_t k = 0; k < in_field.z_min(); ++k)
+    for(std::size_t k = 0; k < in_field.z_max(); ++k)
         for(std::size_t j = in_field.y_max(); j < in_field.y_size(); ++j)
             for(std::size_t i = in_field.x_min(); i < in_field.x_max(); ++i)
                 in_field(i, j, k) = in_field(i, j - y_interior, k);
 
     // Left edge (including corners):
-    for(std::size_t k = 0; k < in_field.z_min(); ++k)
+    for(std::size_t k = 0; k < in_field.z_max(); ++k)
         for(std::size_t j = in_field.y_min(); j < in_field.y_max(); ++j)
             for(std::size_t i = 0; i < in_field.x_min(); ++i)
                 in_field(i, j, k) = in_field(i + x_interior, j, k);
 
     // Right edge (including corners):
-    for(std::size_t k = 0; k < in_field.z_min(); ++k)
+    for(std::size_t k = 0; k < in_field.z_max(); ++k)
         for(std::size_t j = in_field.y_min(); j < in_field.y_max(); ++j)
             for(std::size_t i = in_field.x_max(); i < in_field.x_size(); ++i)
                 in_field(i, j, k) = in_field(i - x_interior, j, k);

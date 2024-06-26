@@ -8,7 +8,7 @@ namespace device {
 template<typename T>
 void update_boundaries(cudaStream_t &stream, T *u,
                        std::size_t xmin, std::size_t xmax,
-                       std::size_t ymin, std::size_t ymax, std::size_t zmin,
+                       std::size_t ymin, std::size_t ymax, std::size_t zmax,
                        std::size_t xsize, std::size_t ysize) {
 
     const std::size_t xint = xmax - xmin;
@@ -19,39 +19,39 @@ void update_boundaries(cudaStream_t &stream, T *u,
     // Ranges:
     // i in [xmin, xmax[
     // j in [0, ymin[
-    // k in [0, zmin[
+    // k in [0, zmax[
     const dim3 grid_dim_south((xmax - xmin + (block_dim.x - 1)) / block_dim.x,
                               (ymin + (block_dim.y - 1)) / block_dim.y,
-                              (zmin + (block_dim.z - 1)) / block_dim.z);
+                              (zmax + (block_dim.z - 1)) / block_dim.z);
 
     // Ranges:
     // i in [xmin, xmax[
     // j in [ymax, ysize[
-    // k in [0, zmin[
+    // k in [0, zmax[
     const dim3 grid_dim_north((xmax - xmin + (block_dim.x - 1)) / block_dim.x,
                               (ysize - ymax + (block_dim.y - 1)) / block_dim.y,
-                              (zmin + (block_dim.z - 1)) / block_dim.z);
+                              (zmax + (block_dim.z - 1)) / block_dim.z);
 
     // Ranges:
     // i in [0, xmin[
     // j in [ymin, ymax[
-    // k in [0, zmin[
+    // k in [0, zmax[
     const dim3 grid_dim_west((xmin + (block_dim.x - 1)) / block_dim.x,
                              (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
-                             (zmin + (block_dim.z - 1)) / block_dim.z);
+                             (zmax + (block_dim.z - 1)) / block_dim.z);
 
     // Ranges:
     // i in [xmax, xsize[
     // j in [ymin, ymax[
-    // k in [0, zmin[
+    // k in [0, zmax[
     const dim3 grid_dim_east((xsize - xmax + (block_dim.x - 1)) / block_dim.x,
                              (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
-                             (zmin + (block_dim.z - 1)) / block_dim.z);
+                             (zmax + (block_dim.z - 1)) / block_dim.z);
 
-    kernels::update_south<<<grid_dim_south, block_dim, 0, stream>>>(u, xmin, xmax, ymin, zmin, yint, xsize, ysize);
-    kernels::update_north<<<grid_dim_north, block_dim, 0, stream>>>(u, xmin, xmax, ymax, zmin, yint, xsize, ysize);
-    kernels::update_west<<<grid_dim_west, block_dim, 0, stream>>>(u, xmin, ymin, ymax, zmin, xint, xsize, ysize);
-    kernels::update_east<<<grid_dim_east, block_dim, 0, stream>>>(u, xmax, ymin, ymax, zmin, xint, xsize, ysize);
+    kernels::update_south<<<grid_dim_south, block_dim, 0, stream>>>(u, xmin, xmax, ymin, zmax, yint, xsize, ysize);
+    kernels::update_north<<<grid_dim_north, block_dim, 0, stream>>>(u, xmin, xmax, ymax, zmax, yint, xsize, ysize);
+    kernels::update_west<<<grid_dim_west, block_dim, 0, stream>>>(u, xmin, ymin, ymax, zmax, xint, xsize, ysize);
+    kernels::update_east<<<grid_dim_east, block_dim, 0, stream>>>(u, xmax, ymin, ymax, zmax, xint, xsize, ysize);
 }
 
 
