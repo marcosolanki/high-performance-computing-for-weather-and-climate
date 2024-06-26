@@ -3,25 +3,7 @@
 #include "kernels.cuh"
 
 
-template<typename T>
-void initialise(cudaStream_t &stream, T *u,
-                std::size_t xsize, std::size_t ysize, std::size_t zsize) {
-
-    const std::size_t imin = static_cast<T>(0.25 * xsize + 0.5);
-    const std::size_t imax = static_cast<T>(0.75 * xsize + 0.5);
-    const std::size_t jmin = static_cast<T>(0.25 * ysize + 0.5);
-    const std::size_t jmax = static_cast<T>(0.75 * ysize + 0.5);
-    const std::size_t kmin = static_cast<T>(0.25 * zsize + 0.5);
-    const std::size_t kmax = static_cast<T>(0.75 * zsize + 0.5);
-
-    constexpr dim3 block_dim(4, 4, 4);
-    const dim3 grid_dim((xsize + (block_dim.x - 1)) / block_dim.x,
-                        (ysize + (block_dim.y - 1)) / block_dim.y,
-                        (zsize + (block_dim.z - 1)) / block_dim.z);
-
-    kernels::initialise<<<grid_dim, block_dim, 0, stream>>>(u, imin, imax, jmin, jmax, kmin, kmax, xsize, ysize, zsize);
-}
-
+namespace device {
 
 template<typename T>
 void update_boundaries(cudaStream_t &stream, T *u,
@@ -85,3 +67,5 @@ void update_interior(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin
     kernels::biharmonic_operator<<<grid_dim, block_dim, 0, stream>>>(u, v, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
     kernels::update_interior<<<grid_dim, block_dim, 0, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
 }
+
+} // namespace device

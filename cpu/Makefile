@@ -6,4 +6,4 @@ main: main.cpp utils.hpp
 
 .PHONY: clean
 clean:
-	$(RM) main in_field.csv out_field.csv
+	$(RM) main in_field.csv out_field.csv plot.png

@@ -44,9 +44,9 @@ void update_halo(Storage3D<T> &in_field) {
 
 template<typename T>
 void apply_diffusion(Storage3D<T> &in_field, Storage3D<T> &out_field, T alpha,
-                     std::size_t num_iter, std::size_t x, std::size_t y, std::size_t z, std::size_t halo) {
+                     std::size_t num_iter, std::size_t x, std::size_t y, std::size_t halo) {
 
-    Storage3D<T> tmp_field(x, y, z, halo);
+    Storage3D<T> tmp_field(x, y, 1, halo);
 
     for(std::size_t iter = 0; iter < num_iter; ++iter) {
         update_halo(in_field);
@@ -102,7 +102,7 @@ void run_simulation(std::size_t x, std::size_t y, std::size_t z, std::size_t ite
     fout.close();
     const time_point start = std::chrono::steady_clock::now();
 
-    apply_diffusion<T>(input, output, alpha, iter, x, y, z, halo);
+    apply_diffusion<T>(input, output, alpha, iter, x, y, halo);
 
     const time_point end = std::chrono::steady_clock::now();
     update_halo<T>(output);

@@ -19,6 +19,7 @@ def validate_results():
     im2 = axs[1].imshow(out_field[out_field.shape[0] // 2, :, :], origin='lower', vmin=-0.1, vmax=1.1)
     fig.colorbar(im2, ax=axs[1])
     axs[1].set_title('Final result')
+    plt.savefig('plot.png', bbox_inches='tight')
     plt.show()
 
 
