@@ -16,6 +16,7 @@ static inline void check(cudaError_t error) {
         std::cerr << "ERROR: A CUDA runtime API call returned a cudaError_t != cudaSuccess.\n"
                   << "Error name:   \"" << cudaGetErrorName(error) << "\"\n"
                   << "Error string: \"" << cudaGetErrorString(error) << "\"\n";
+        std::cout << "================================================================================\n";
         exit(EXIT_FAILURE);
     }
 }

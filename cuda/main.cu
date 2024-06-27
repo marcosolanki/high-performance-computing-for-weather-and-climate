@@ -18,7 +18,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     const std::size_t zmax = zsize;
 
     cudaStream_t stream;
-    T *u, *v, *u_host;
+    T *u, *v, *w, *u_host;
     std::ofstream in_os, out_os;
 
     check(cudaMallocHost(&u_host, xsize * ysize * zsize * sizeof(T)));
@@ -33,16 +33,18 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     check(cudaStreamCreate(&stream));
     check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
     check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
+    check(cudaMallocAsync(&w, xsize * ysize * zsize * sizeof(T), stream));
     check(cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream));
 
     for(std::size_t i = 0; i < iters; ++i) {
         device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-        device::update_interior(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+        device::update_interior_double_laplacian(stream, u, v, w, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
     }
 
     check(cudaMemcpyAsync(u_host, u, xsize * ysize * zsize * sizeof(T), cudaMemcpyDeviceToHost, stream));
     check(cudaFreeAsync(u, stream));
     check(cudaFreeAsync(v, stream));
+    check(cudaFreeAsync(w, stream));
     check(cudaStreamDestroy(stream));
 
     check(cudaDeviceSynchronize());

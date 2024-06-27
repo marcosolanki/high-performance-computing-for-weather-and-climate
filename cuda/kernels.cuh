@@ -78,6 +78,46 @@ __global__ void update_east(T *u, std::size_t xmax, std::size_t ymin, std::size_
 
 
 template<typename T>
+__global__ void laplacian(const T *u, T *v, std::size_t xmin, std::size_t xmax, std::size_t ymin,
+                          std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {
+
+    extern __shared__ T b[];
+
+    const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmin;
+    const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y + ymin;
+    const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
+
+    const std::size_t li = threadIdx.x + 1;
+    const std::size_t lj = threadIdx.y + 1;
+    const std::size_t lxsize = blockDim.x + 2;
+    const std::size_t lysize = blockDim.y + 2;
+
+    // Stencil:
+    //     1
+    // 1  -4   1
+    //     1
+
+    if(i < xmax && j < ymax && k < zmax) {
+
+        if(li == 1) b[index(li - 1, lj, 0, lxsize, lysize)] = u[index(i - 1, j, k, xsize, ysize)];
+        if(lj == 1) b[index(li, lj - 1, 0, lxsize, lysize)] = u[index(i, j - 1, k, xsize, ysize)];
+        if(li == lxsize - 2 || i == xmax - 1) b[index(li + 1, lj, 0, lxsize, lysize)] = u[index(i + 1, j, k, xsize, ysize)];
+        if(lj == lysize - 2 || j == ymax - 1) b[index(li, lj + 1, 0, lxsize, lysize)] = u[index(i, j + 1, k, xsize, ysize)];
+
+        b[index(li, lj, 0, lxsize, lysize)] = u[index(i, j, k, xsize, ysize)];
+    }
+
+    __syncthreads();
+
+    if(i < xmax && j < ymax && k < zmax)
+        v[index(i, j, k, xsize, ysize)]
+            = 1 * (b[index(li + 1, lj, 0, lxsize, lysize)] + b[index(li, lj + 1, 0, lxsize, lysize)]
+                +  b[index(li - 1, lj, 0, lxsize, lysize)] + b[index(li, lj - 1, 0, lxsize, lysize)])
+            - 4 *  b[index(li, lj, 0, lxsize, lysize)];
+}
+
+
+template<typename T>
 __global__ void biharmonic_operator(const T *u, T *v, std::size_t xmin, std::size_t xmax, std::size_t ymin,
                                     std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
@@ -88,7 +128,7 @@ __global__ void biharmonic_operator(const T *u, T *v, std::size_t xmin, std::siz
     // Stencil:
     //         1
     //     2  -8   2
-    // 1  -8  20  -8  1
+    // 1  -8  20  -8   1
     //     2  -8   2
     //         1
 
