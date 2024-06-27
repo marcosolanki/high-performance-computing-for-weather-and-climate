@@ -5,6 +5,10 @@
 #include <fstream>
 #include <sstream>
 
+#ifndef CUDART_VERSION
+#error "CUDART_VERSION not defined!"
+#endif
+
 
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
@@ -29,12 +33,18 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     in_os.close();
 
     const time_point begin = std::chrono::steady_clock::now();
-
     check(cudaStreamCreate(&stream));
+
+    #if CUDART_VERSION >= 11020
     check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
     check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
-    if(mode == laplap_global || mode == laplap_shared)
-        check(cudaMallocAsync(&w, xsize * ysize * zsize * sizeof(T), stream));
+    if(mode == laplap_global || mode == laplap_shared) check(cudaMallocAsync(&w, xsize * ysize * zsize * sizeof(T), stream));
+    #else
+    check(cudaMalloc(&u, xsize * ysize * zsize * sizeof(T)));
+    check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
+    if(mode == laplap_global || mode == laplap_shared) check(cudaMalloc(&w, xsize * ysize * zsize * sizeof(T)));
+    #endif
+
     check(cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream));
 
     for(std::size_t i = 0; i < itrs; ++i) {
@@ -48,12 +58,18 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     }
 
     check(cudaMemcpyAsync(u_host, u, xsize * ysize * zsize * sizeof(T), cudaMemcpyDeviceToHost, stream));
+
+    #if CUDART_VERSION >= 11020
     check(cudaFreeAsync(u, stream));
     check(cudaFreeAsync(v, stream));
-    if(mode == laplap_global || mode == laplap_shared)
-        check(cudaFreeAsync(w, stream));
-    check(cudaStreamDestroy(stream));
+    if(mode == laplap_global || mode == laplap_shared) check(cudaFreeAsync(w, stream));
+    #else
+    check(cudaFree(u));
+    check(cudaFree(v));
+    if(mode == laplap_global || mode == laplap_shared) check(cudaFree(w));
+    #endif
 
+    check(cudaStreamDestroy(stream));
     check(cudaDeviceSynchronize());
     const time_point end = std::chrono::steady_clock::now();
 
@@ -90,7 +106,7 @@ int templated_main(int argc, char const **argv) {
 
         std::cout << "================================================================================\n";
         std::cout << "                             Welcome to stencil2d!\n";
-        std::cout << "Version    :: C++ with CUDA\n";
+        std::cout << "Version    :: C++ with CUDA v" << CUDART_VERSION / 1000 << '.' << CUDART_VERSION / 10 % 100 << '\n';
         std::cout << "Interior   :: (" << x << ", " << y << ", " << z << ")\n";
         std::cout << "Boundaries :: (" << halo << ", " << halo << ", " << 0 << ")\n";
         std::cout << "Iterations :: " << itrs << '\n';
