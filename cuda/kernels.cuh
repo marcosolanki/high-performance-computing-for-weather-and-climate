@@ -81,6 +81,27 @@ template<typename T>
 __global__ void laplacian(const T *u, T *v, std::size_t xmin, std::size_t xmax, std::size_t ymin,
                           std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
+    const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmin;
+    const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y + ymin;
+    const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
+
+    // Stencil:
+    //     1
+    // 1  -4   1
+    //     1
+
+    if(i < xmax && j < ymax && k < zmax)
+        v[index(i, j, k, xsize, ysize)]
+            = 1 * (u[index(i + 1, j, k, xsize, ysize)] + u[index(i, j + 1, k, xsize, ysize)]
+                +  u[index(i - 1, j, k, xsize, ysize)] + u[index(i, j - 1, k, xsize, ysize)])
+            - 4 *  u[index(i, j, k, xsize, ysize)];
+}
+
+
+template<typename T>
+__global__ void laplacian_shared(const T *u, T *v, std::size_t xmin, std::size_t xmax, std::size_t ymin,
+                                 std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {
+
     extern __shared__ T b[];
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmin;
