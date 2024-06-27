@@ -1,9 +1,21 @@
 -include ../config.mk
 
+CXX=CC
+VERSIONS=kernels parallel optimize
 
-main: main.cpp utils.hpp
-	$(CXX) -o $@ $< $(CXXFLAGS)
+.PHONY: all
+
+all: $(VERSIONS)
+
+kernels: main-kernels.cpp utils.hpp
+	$(CXX) -o $@ $< -fopenacc $(CXXFLAGS)
+    
+parallel: main-parallel.cpp utils.hpp
+	$(CXX) -o $@ $< -fopenacc $(CXXFLAGS)
+    
+optimize: main-optimize.cpp utils.hpp
+	$(CXX) -o $@ $< -fopenacc $(CXXFLAGS)
 
 .PHONY: clean
 clean:
-	$(RM) main in_field.csv out_field.csv plot.png
+	$(RM) $(VERSIONS) in_field.csv out_field.csv plot.png
