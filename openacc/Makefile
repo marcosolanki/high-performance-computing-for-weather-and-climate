@@ -1,20 +1,19 @@
 -include ../config.mk
 
-CXX=CC
-VERSIONS=kernels parallel optimize
+
+VERSIONS=kernels parallel optimised
 
 .PHONY: all
-
 all: $(VERSIONS)
 
 kernels: main-kernels.cpp utils.hpp
-	$(CXX) -o $@ $< -fopenacc $(CXXFLAGS)
-    
+	$(ACCCXX) -o $@ $< $(ACCFLAGS)
+
 parallel: main-parallel.cpp utils.hpp
-	$(CXX) -o $@ $< -fopenacc $(CXXFLAGS)
-    
-optimize: main-optimize.cpp utils.hpp
-	$(CXX) -o $@ $< -fopenacc $(CXXFLAGS)
+	$(ACCCXX) -o $@ $< $(ACCFLAGS)
+
+optimised: main-optimised.cpp utils.hpp
+	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
 .PHONY: clean
 clean:
