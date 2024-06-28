@@ -1,0 +1,11 @@
+main
+in_field.csv
+out_field.csv
+plot.png
+kernels
+parallel
+optimised
+.gt_cache
+.ipynb_checkpoints
+in_field.npy
+out_field.npy
