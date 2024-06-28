@@ -1,3 +1,4 @@
+.venv
 main
 in_field.csv
 out_field.csv
