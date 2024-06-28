@@ -177,10 +177,10 @@ int templated_main(int argc, char const **argv) {
         std::cout << "Iterations :: " << iters << '\n';
         std::cout << "Real size  :: " << sizeof(T) << '\n';
         std::cout << "================================================================================\n";
-        acc_device_t dev = acc_get_device_type();
-        int num = acc_get_num_devices(dev);
+        //acc_device_t dev = acc_get_device_type();
+        //int num = acc_get_num_devices(dev);
         
-        std::cout << num << std::endl;
+        //std::cout << num << std::endl;
         //std::cout << "OpenACC Version: " << openacc_version() << std::endl;
         const double time = run_simulation<T>(x + 2 * halo, y + 2 * halo, z, iters, halo);
 

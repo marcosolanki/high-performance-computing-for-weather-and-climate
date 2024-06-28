@@ -117,7 +117,7 @@ double run_simulation(std::size_t x, std::size_t y, std::size_t z, std::size_t i
     fout.close();
 
     const double time = std::chrono::duration<double, std::milli>(end - start).count() / 1000;
-    report_time(output, iter, time);
+    //report_time(output, iter, time);
 
     return time;
 }
@@ -158,11 +158,16 @@ int templated_main(int argc, char const **argv) {
         std::cout << "Iterations :: " << iters << '\n';
         std::cout << "Real size  :: " << sizeof(T) << '\n';
         std::cout << "================================================================================\n";
-        acc_device_t dev = acc_get_device_type();
-        int num = acc_get_num_devices(dev);
+        //acc_device_t dev = acc_get_device_type();
+        //int num = acc_get_num_devices(dev);
+        //std::cout << num << std::endl;
+
+#ifdef _OPENACC
+        std::cout << "Running with OpenACC :-)" << std::endl;
+#else
+        std::cout << "No OpenACC :-(" << std::endl;
+#endif
         
-        std::cout << num << std::endl;
-        //std::cout << "OpenACC Version: " << openacc_version() << std::endl;
         const double time = run_simulation<T>(x + 2 * halo, y + 2 * halo, z, iters, halo);
 
         std::cout << "Runtime    :: " << time << "s\n";
