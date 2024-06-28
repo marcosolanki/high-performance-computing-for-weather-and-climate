@@ -39,17 +39,17 @@ def diffusion_defs(
     with computation(PARALLEL), interval(...):
         out_field = (
             a1 * in_field[0, -2, 0]
-            + a2 * in_field[-1, -1, 0]
+            + a2 * in_field[0, -1, -1]
             + a8 * in_field[0, -1, 0]
-            + a2 * in_field[1, -1, 0]
-            + a1 * in_field[-2, 0, 0]
-            + a8 * in_field[-1, 0, 0]
+            + a2 * in_field[0, -1, 1]
+            + a1 * in_field[0, 0, -2]
+            + a8 * in_field[0, 0, -1]
             + a20 * in_field[0, 0, 0]
-            + a8 * in_field[1, 0, 0]
-            + a1 * in_field[2, 0, 0]
-            + a2 * in_field[-1, 1, 0]
+            + a8 * in_field[0, 0, 1]
+            + a1 * in_field[0, 0, 2]
+            + a2 * in_field[0, 1, -1]
             + a8 * in_field[0, 1, 0]
-            + a2 * in_field[1, 1, 0]
+            + a2 * in_field[0, 1, 1]
             + a1 * in_field[0, 2, 0]
         )
 
@@ -76,11 +76,11 @@ def apply_diffusion(
     diffusion_stencil, in_field, out_field, alpha, num_halo, num_iter=1
 ):
     # origin and extent of the computational domain
-    origin = (num_halo, num_halo, 0)
+    origin = (0, num_halo, num_halo)
     domain = (
-        in_field.shape[0] - 2 * num_halo,
+        in_field.shape[0],
         in_field.shape[1] - 2 * num_halo,
-        in_field.shape[2],
+        in_field.shape[2] - 2 * num_halo,
     )
 
     for n in range(num_iter):
@@ -152,7 +152,7 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend="numpy", plot_result=False):
     alpha = 1.0 / 32.0
 
     # default origin
-    dorigin = (num_halo, num_halo, 0)
+    dorigin = (0, num_halo, num_halo)
 
     # allocate input field
     in_field_np  = np.zeros((nx + 2 * num_halo, ny + 2 * num_halo, nz), dtype=float)
@@ -167,11 +167,12 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend="numpy", plot_result=False):
     # write input field to file
     # swap first and last axes for compatibility with day1/stencil2d.py
     np.save("in_field", np.swapaxes(in_field_np, 0, 2))
+    in_field_np = np.swapaxes(in_field_np, 0, 2)
 
     if plot_result:
         # plot initial field
         plt.ioff()
-        plt.imshow(in_field_np[:, :, 0], origin="lower")
+        plt.imshow(in_field_np[nz//2, :, :], origin="lower")
         plt.colorbar()
         plt.savefig("in_field.png")
         plt.close()
@@ -191,7 +192,7 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend="numpy", plot_result=False):
     # time the actual work
     tic = time.time()
     out_field = gt.storage.zeros(
-        backend, dorigin, (nx + 2 * num_halo, ny + 2 * num_halo, nz), dtype=float
+        backend, dorigin, (nz, nx + 2 * num_halo, ny + 2 * num_halo), dtype=float
     )
     in_field = gt.storage.from_array(in_field_np, backend, dorigin)
     apply_diffusion(
@@ -203,12 +204,13 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend="numpy", plot_result=False):
 
     # save output field
     # swap first and last axes for compatibility with day1/stencil2d.py
-    np.save("out_field", np.swapaxes(out_field_np, 0, 2))
+    #np.save("out_field", np.swapaxes(out_field_np, 0, 2))
+    np.save("out_field", out_field_np)
 
     if plot_result:
         # plot the output field
         plt.ioff()
-        plt.imshow(out_field_np[:, :, 0], origin="lower")
+        plt.imshow(out_field_np[nz//2, :, :], origin="lower")
         plt.colorbar()
         plt.savefig("out_field.png")
         plt.close()
