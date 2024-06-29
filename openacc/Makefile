@@ -1,6 +1,6 @@
 -include ../config.mk
 
-VERSIONS=kernels parallel optimize jacobi main stencil acc
+VERSIONS=main jacobi kernels parallel optimised stencil
 
 .PHONY: all
 all: $(VERSIONS)
@@ -28,5 +28,4 @@ again: clean all
     
 .PHONY: clean
 clean:
-	$(RM) $(VERSIONS) in_field.csv out_field.csv plot.png
-	$(RM) *.i *.lst *.mod *.o
+	$(RM) $(VERSIONS) in_field.csv out_field.csv plot.png *.i *.lst *.mod *.o
