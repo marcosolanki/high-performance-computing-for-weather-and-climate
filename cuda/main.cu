@@ -23,14 +23,14 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     cudaStream_t stream;
     T *u, *v, *w, *u_host;
-    std::ofstream in_os, out_os;
+    std::ofstream os;
 
     check(cudaMallocHost(&u_host, xsize * ysize * zsize * sizeof(T)));
     host::initialise(u_host, xsize, ysize, zsize);
 
-    in_os.open("in_field.csv");
-    host::write_file(in_os, u_host, xsize, ysize, zsize);
-    in_os.close();
+    os.open("in_field.csv");
+    host::write_file(os, u_host, xsize, ysize, zsize);
+    os.close();
 
     const time_point begin = std::chrono::steady_clock::now();
     check(cudaStreamCreate(&stream));
@@ -38,7 +38,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     #if CUDART_VERSION >= 11020
     check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
     check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
-    if(mode == laplap_global || mode == laplap_shared) check(cudaMallocAsync(&w, xsize * ysize * zsize * sizeof(T), stream));
+    if(mode == Mode::laplap_global || mode == Mode::laplap_shared) check(cudaMallocAsync(&w, xsize * ysize * zsize * sizeof(T), stream));
     #else
     check(cudaMalloc(&u, xsize * ysize * zsize * sizeof(T)));
     check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
@@ -47,22 +47,38 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     check(cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream));
 
-    for(std::size_t i = 0; i < itrs; ++i) {
-        device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-        switch(mode) {
-            case laplap_global: {device::update_interior_double_laplacian(stream, u, v, w, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize); break;}
-            case laplap_shared: {device::update_interior_double_laplacian_shared(stream, u, v, w, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize); break;}
-            case biharm_global: {device::update_interior_biharmonic(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize); break;}
-            default:            {__builtin_unreachable();}
+    switch(mode) {
+        case Mode::laplap_global: {
+            for(std::size_t i = 0; i < itrs; ++i) {
+                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                device::update_interior_double_laplacian(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+            }
+            break;
         }
+        case Mode::laplap_shared: {
+            for(std::size_t i = 0; i < itrs; ++i) {
+                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                device::update_interior_double_laplacian_shared(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+            }
+            break;
+        }
+        case Mode::biharm_global: {
+            for(std::size_t i = 0; i < itrs; ++i) {
+                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                device::update_interior_biharmonic(stream, u, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+            }
+            break;
+        }
+        default: __builtin_unreachable();
     }
+    device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
 
     check(cudaMemcpyAsync(u_host, u, xsize * ysize * zsize * sizeof(T), cudaMemcpyDeviceToHost, stream));
 
     #if CUDART_VERSION >= 11020
     check(cudaFreeAsync(u, stream));
     check(cudaFreeAsync(v, stream));
-    if(mode == laplap_global || mode == laplap_shared) check(cudaFreeAsync(w, stream));
+    if(mode == Mode::laplap_global || mode == Mode::laplap_shared) check(cudaFreeAsync(w, stream));
     #else
     check(cudaFree(u));
     check(cudaFree(v));
@@ -73,9 +89,9 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     check(cudaDeviceSynchronize());
     const time_point end = std::chrono::steady_clock::now();
 
-    out_os.open("out_field.csv");
-    host::write_file(out_os, u_host, xsize, ysize, zsize);
-    out_os.close();
+    os.open("out_field.csv");
+    host::write_file(os, u_host, xsize, ysize, zsize);
+    os.close();
 
     check(cudaFreeHost(u_host));
 
@@ -97,7 +113,7 @@ int templated_main(int argc, char const **argv) {
             mode = utils::mode_from_string(argv[5]);
 
             if(x_ss.fail() || y_ss.fail() || z_ss.fail() || itrs_ss.fail() ||
-               x == 0 || y == 0 || z == 0 || itrs == 0 || mode == invalid) {
+               x == 0 || y == 0 || z == 0 || itrs == 0 || mode == Mode::invalid) {
 
                 utils::print_args_errmsg();
                 return EXIT_FAILURE;

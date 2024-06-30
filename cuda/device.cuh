@@ -58,7 +58,7 @@ void update_boundaries(cudaStream_t &stream, T *u,
 
 
 template<typename T>
-void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T *w, T alpha, std::size_t xmin,
+void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
                                       std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                       std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
@@ -72,13 +72,12 @@ void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T *w, T 
                             (zmax + (block_dim.z - 1)) / block_dim.z);
 
     kernels::laplacian<<<grid_dim_lap, block_dim, 0, stream>>>(u, v, xmin - 1, xmax + 1, ymin - 1, ymax + 1, zmax, xsize, ysize);
-    kernels::laplacian<<<grid_dim_int, block_dim, 0, stream>>>(v, w, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-    kernels::update_interior<<<grid_dim_int, block_dim, 0, stream>>>(u, w, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    kernels::laplacian_update<<<grid_dim_int, block_dim, 0, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
 }
 
 
 template<typename T>
-void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T *w, T alpha, std::size_t xmin,
+void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
                                              std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                              std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
@@ -94,13 +93,12 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
     constexpr std::size_t shared_size = (block_dim.x + 2) * (block_dim.y + 2) * sizeof(T);
 
     kernels::laplacian_shared<<<grid_dim_lap, block_dim, shared_size, stream>>>(u, v, xmin - 1, xmax + 1, ymin - 1, ymax + 1, zmax, xsize, ysize);
-    kernels::laplacian_shared<<<grid_dim_int, block_dim, shared_size, stream>>>(v, w, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-    kernels::update_interior<<<grid_dim_int, block_dim, 0, stream>>>(u, w, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    kernels::laplacian_shared_update<<<grid_dim_int, block_dim, shared_size, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
 }
 
 
 template<typename T>
-void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
+void update_interior_biharmonic(cudaStream_t &stream, T *u, T alpha, std::size_t xmin,
                                 std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                 std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
@@ -109,8 +107,7 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
                         (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                         (zmax + (block_dim.z - 1)) / block_dim.z);
 
-    kernels::biharmonic_operator<<<grid_dim, block_dim, 0, stream>>>(u, v, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-    kernels::update_interior<<<grid_dim, block_dim, 0, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    kernels::biharmonic_operator_update<<<grid_dim, block_dim, 0, stream>>>(u, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
 }
 
 } // namespace device

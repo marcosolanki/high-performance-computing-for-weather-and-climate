@@ -24,7 +24,7 @@ static inline void check(cudaError_t error) {
 } // namespace
 
 
-enum Mode {
+enum class Mode {
     laplap_global,
     laplap_shared,
     biharm_global,
@@ -50,18 +50,18 @@ void print_args_errmsg() {
 
 Mode mode_from_string(const char *s) {
     std::string mode(s);
-    if(mode == "laplap-global") return laplap_global;
-    if(mode == "laplap-shared") return laplap_shared;
-    if(mode == "biharm-global") return biharm_global;
-    return invalid;
+    if(mode == "laplap-global") return Mode::laplap_global;
+    if(mode == "laplap-shared") return Mode::laplap_shared;
+    if(mode == "biharm-global") return Mode::biharm_global;
+    return Mode::invalid;
 }
 
 
 std::string get_mode_desc(Mode mode) {
     switch(mode) {
-        case laplap_global: return "Double 5-point laplacian stencil. Uses global memory only.";
-        case laplap_shared: return "Double 5-point laplacian stencil. Uses shared memory.";
-        case biharm_global: return "Single 13-point biharmonic stencil. Uses global memory only.";
+        case Mode::laplap_global: return "Double 5-point laplacian stencil. Uses global memory only.";
+        case Mode::laplap_shared: return "Double 5-point laplacian stencil. Uses shared memory.";
+        case Mode::biharm_global: return "Single 13-point biharmonic stencil. Uses global memory only.";
         default: __builtin_unreachable();
     }
 }
