@@ -1,23 +1,14 @@
 -include ../config.mk
 
-VERSIONS=main jacobi kernels parallel optimised # stencil
+VERSIONS=main jacobi # stencil
 
 .PHONY: all
 all: $(VERSIONS)
 
-main: ../cpu/main.cpp ../cpu/utils.hpp
+main: main.cpp kernels.hpp parallel.hpp optimised.hpp utils.hpp
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
-jacobi: jacobi.cpp
-	$(ACCCXX) -o $@ $< $(ACCFLAGS)
-
-kernels: kernels.cpp kernels.hpp utils.hpp
-	$(ACCCXX) -o $@ $< $(ACCFLAGS)
-
-parallel: parallel.cpp parallel.hpp utils.hpp
-	$(ACCCXX) -o $@ $< $(ACCFLAGS)
-
-optimised: optimised.cpp optimised.hpp utils.hpp
+jacobi: jacobi.cpp timer.h
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
 # stencil: utils.F90 stencil2d.F90
