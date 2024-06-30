@@ -1,4 +1,4 @@
-#include "utils.hpp"
+#include "optimised.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -10,80 +10,6 @@
 
 
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
-
-
-template<typename T>
-void update_boundaries(T *u, std::size_t xmin, std::size_t xmax,
-                       std::size_t ymin, std::size_t ymax, std::size_t zmax,
-                       std::size_t xsize, std::size_t ysize) {
-
-    const std::size_t xint = xmax - xmin;
-    const std::size_t yint = ymax - ymin;
-
-    #pragma acc kernels
-    {
-        // Bottom edge (without corners):
-        #pragma acc loop gang
-        for(std::size_t k = 0; k < zmax; ++k)
-            #pragma acc loop vector collapse(2)
-            for(std::size_t j = 0; j < ymin; ++j)
-                for(std::size_t i = xmin; i < xmax; ++i)
-                    u[index(i, j, k, xsize, ysize)] = u[index(i, j + yint, k, xsize, ysize)];
-
-        // Top edge (without corners):
-        #pragma acc loop gang
-        for(std::size_t k = 0; k < zmax; ++k)
-            #pragma acc loop vector collapse(2)
-            for(std::size_t j = ymax; j < ysize; ++j)
-                for(std::size_t i = xmin; i < xmax; ++i)
-                    u[index(i, j, k, xsize, ysize)] = u[index(i, j - yint, k, xsize, ysize)];
-
-        // Left edge (including corners):
-        #pragma acc loop gang
-        for(std::size_t k = 0; k < zmax; ++k)
-            #pragma acc loop vector collapse(2)
-            for(std::size_t j = ymin; j < ymax; ++j)
-                for(std::size_t i = 0; i < xmin; ++i)
-                    u[index(i, j, k, xsize, ysize)] = u[index(i + xint, j, k, xsize, ysize)];
-
-        // Right edge (including corners):
-        #pragma acc loop gang
-        for(std::size_t k = 0; k < zmax; ++k)
-            #pragma acc loop vector collapse(2)
-            for(std::size_t j = ymin; j < ymax; ++j)
-                for(std::size_t i = xmax; i < xsize; ++i)
-                    u[index(i, j, k, xsize, ysize)] = u[index(i - xint, j, k, xsize, ysize)];
-    }
-}
-
-
-template<typename T>
-void update_interior(T *u, T *v, T alpha, std::size_t xmin, std::size_t xmax, std::size_t ymin,
-                     std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {
-
-    for(std::size_t k = 0; k < zmax; ++k) {
-
-        // Apply the initial laplacian:
-        #pragma acc parallel loop collapse(2)
-        for(std::size_t j = ymin - 1; j < ymax + 1; ++j)
-            for(std::size_t i = xmin - 1; i < xmax + 1; ++i)
-                v[index(i, j, 0, xsize, ysize)] = -static_cast<T>(4) * u[index(i, j, k, xsize, ysize)]
-                                                                     + u[index(i - 1, j, k, xsize, ysize)]
-                                                                     + u[index(i + 1, j, k, xsize, ysize)]
-                                                                     + u[index(i, j - 1, k, xsize, ysize)]
-                                                                     + u[index(i, j + 1, k, xsize, ysize)];
-
-        // Apply the second laplacian and update the field:
-        #pragma acc parallel loop collapse(2)
-        for(std::size_t j = ymin; j < ymax; ++j)
-            for(std::size_t i = xmin; i < xmax; ++i)
-                u[index(i, j, k, xsize, ysize)] += alpha * (static_cast<T>(4) * v[index(i, j, 0, xsize, ysize)]
-                                                                              - v[index(i - 1, j, 0, xsize, ysize)]
-                                                                              - v[index(i + 1, j, 0, xsize, ysize)]
-                                                                              - v[index(i, j - 1, 0, xsize, ysize)]
-                                                                              - v[index(i, j + 1, 0, xsize, ysize)]);
-    }
-}
 
 
 template<typename T>
@@ -112,10 +38,10 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     #pragma acc data copy(u[0:xsize*ysize*zsize]) create(v[0:xsize*ysize])
     {
         for(std::size_t i = 0; i < itrs; ++i) {
-            update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-            update_interior(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+            optimised::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+            optimised::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
         }
-        update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+        optimised::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
     }
 
     const time_point end = std::chrono::steady_clock::now();

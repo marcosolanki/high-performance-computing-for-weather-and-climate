@@ -11,13 +11,13 @@ main: ../cpu/main.cpp ../cpu/utils.hpp
 jacobi: jacobi.cpp
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
-kernels: main-kernels.cpp utils.hpp
+kernels: kernels.cpp kernels.hpp utils.hpp
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
-parallel: main-parallel.cpp utils.hpp
+parallel: parallel.cpp parallel.hpp utils.hpp
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
-optimised: main-optimised.cpp utils.hpp
+optimised: optimised.cpp optimised.hpp utils.hpp
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
 # stencil: utils.F90 stencil2d.F90
