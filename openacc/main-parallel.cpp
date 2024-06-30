@@ -1,10 +1,11 @@
+#include "utils.hpp"
+
 #include <cassert>
 #include <chrono>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-#include "utils.hpp"
 #include <openacc.h>
 
 
@@ -12,118 +13,111 @@ using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
 
 template<typename T>
-void update_halo(Storage3D<T> &in_field) {
+void update_boundaries(T *u, std::size_t xmin, std::size_t xmax,
+                       std::size_t ymin, std::size_t ymax, std::size_t zmax,
+                       std::size_t xsize, std::size_t ysize) {
 
-    const std::size_t x_interior = in_field.x_max() - in_field.x_min();
-    const std::size_t y_interior = in_field.y_max() - in_field.y_min();
+    const std::size_t xint = xmax - xmin;
+    const std::size_t yint = ymax - ymin;
 
     // Bottom edge (without corners):
-    #pragma acc parallel loop
-    for(std::size_t k = 0; k < in_field.z_max(); ++k)
-        for(std::size_t j = 0; j < in_field.y_min(); ++j)
-            for(std::size_t i = in_field.x_min(); i < in_field.x_max(); ++i)
-                in_field(i, j, k) = in_field(i, j + y_interior, k);
+    #pragma acc parallel loop collapse(3)
+    for(std::size_t k = 0; k < zmax; ++k)
+        for(std::size_t j = 0; j < ymin; ++j)
+            for(std::size_t i = xmin; i < xmax; ++i)
+                u[index(i, j, k, xsize, ysize)] = u[index(i, j + yint, k, xsize, ysize)];
 
     // Top edge (without corners):
-    #pragma acc parallel loop
-    for(std::size_t k = 0; k < in_field.z_max(); ++k)
-        for(std::size_t j = in_field.y_max(); j < in_field.y_size(); ++j)
-            for(std::size_t i = in_field.x_min(); i < in_field.x_max(); ++i)
-                in_field(i, j, k) = in_field(i, j - y_interior, k);
+    #pragma acc parallel loop collapse(3)
+    for(std::size_t k = 0; k < zmax; ++k)
+        for(std::size_t j = ymax; j < ysize; ++j)
+            for(std::size_t i = xmin; i < xmax; ++i)
+                u[index(i, j, k, xsize, ysize)] = u[index(i, j - yint, k, xsize, ysize)];
 
     // Left edge (including corners):
-    #pragma acc parallel loop
-    for(std::size_t k = 0; k < in_field.z_max(); ++k)
-        for(std::size_t j = in_field.y_min(); j < in_field.y_max(); ++j)
-            for(std::size_t i = 0; i < in_field.x_min(); ++i)
-                in_field(i, j, k) = in_field(i + x_interior, j, k);
+    #pragma acc parallel loop collapse(3)
+    for(std::size_t k = 0; k < zmax; ++k)
+        for(std::size_t j = ymin; j < ymax; ++j)
+            for(std::size_t i = 0; i < xmin; ++i)
+                u[index(i, j, k, xsize, ysize)] = u[index(i + xint, j, k, xsize, ysize)];
 
     // Right edge (including corners):
-    #pragma acc parallel loop
-    for(std::size_t k = 0; k < in_field.z_max(); ++k)
-        for(std::size_t j = in_field.y_min(); j < in_field.y_max(); ++j)
-            for(std::size_t i = in_field.x_max(); i < in_field.x_size(); ++i)
-                in_field(i, j, k) = in_field(i - x_interior, j, k);
+    #pragma acc parallel loop collapse(3)
+    for(std::size_t k = 0; k < zmax; ++k)
+        for(std::size_t j = ymin; j < ymax; ++j)
+            for(std::size_t i = xmax; i < xsize; ++i)
+                u[index(i, j, k, xsize, ysize)] = u[index(i - xint, j, k, xsize, ysize)];
 }
 
 
 template<typename T>
-void apply_diffusion(Storage3D<T> &in_field, Storage3D<T> &out_field, T alpha,
-                     std::size_t num_iter, std::size_t x, std::size_t y, std::size_t halo) {
+void update_interior(T *u, T *v, T alpha, std::size_t xmin, std::size_t xmax, std::size_t ymin,
+                     std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
-    Storage3D<T> tmp_field(x, y, 1, halo);
-    
-    #pragma acc data create(tmp_field) copyin(in_field) copyout(out_field)
-    {
-        for(std::size_t iter = 0; iter < num_iter; ++iter) {
-            update_halo(in_field);
-        
-            for(std::size_t k = 0; k < in_field.z_max(); ++k) {
-            
-                // Apply the initial laplacian:
-                #pragma acc parallel loop
-                for(std::size_t j = in_field.y_min() - 1; j < in_field.y_max() + 1; ++j)
-                    for(std::size_t i = in_field.x_min() - 1; i < in_field.x_max() + 1; ++i)
-                        tmp_field(i, j, 0) = -static_cast<T>(4) * in_field(i, j, k) + in_field(i - 1, j, k) + in_field(i + 1, j, k)
-                                                                                    + in_field(i, j - 1, k) + in_field(i, j + 1, k);
+    for(std::size_t k = 0; k < zmax; ++k) {
 
-                // Apply the second laplacian:
-                #pragma acc parallel loop
-                for(std::size_t j = in_field.y_min(); j < in_field.y_max(); ++j) {
-                    for(std::size_t i = in_field.x_min(); i < in_field.x_max(); ++i) {
-                        T laplap = -static_cast<T>(4) * tmp_field(i, j, 0) + tmp_field(i - 1, j, 0) + tmp_field(i + 1, j, 0)
-                                                                        + tmp_field(i, j - 1, 0) + tmp_field(i, j + 1, 0);
+        // Apply the initial laplacian:
+        #pragma acc parallel loop collapse(2)
+        for(std::size_t j = ymin - 1; j < ymax + 1; ++j)
+            for(std::size_t i = xmin - 1; i < xmax + 1; ++i)
+                v[index(i, j, 0, xsize, ysize)] = -static_cast<T>(4) * u[index(i, j, k, xsize, ysize)]
+                                                                     + u[index(i - 1, j, k, xsize, ysize)]
+                                                                     + u[index(i + 1, j, k, xsize, ysize)]
+                                                                     + u[index(i, j - 1, k, xsize, ysize)]
+                                                                     + u[index(i, j + 1, k, xsize, ysize)];
 
-                        // ...and update the field:
-                        if(iter == num_iter - 1) out_field(i, j, k) = in_field(i, j, k) - alpha * laplap;
-                        else in_field(i, j, k) = in_field(i, j, k) - alpha * laplap;
-                    }
-                }
-            }
-        }
+        // Apply the second laplacian and update the field:
+        #pragma acc parallel loop collapse(2)
+        for(std::size_t j = ymin; j < ymax; ++j)
+            for(std::size_t i = xmin; i < xmax; ++i)
+                u[index(i, j, k, xsize, ysize)] += alpha * (static_cast<T>(4) * v[index(i, j, 0, xsize, ysize)]
+                                                                              - v[index(i - 1, j, 0, xsize, ysize)]
+                                                                              - v[index(i + 1, j, 0, xsize, ysize)]
+                                                                              - v[index(i, j - 1, 0, xsize, ysize)]
+                                                                              - v[index(i, j + 1, 0, xsize, ysize)]);
     }
 }
 
 
 template<typename T>
-void report_time(const Storage3D<T> &storage, std::size_t num_iter, double time) {
-    std::cout << " nx  = " << storage.x_max() - storage.x_min() << '\n'
-              << " ny  = " << storage.y_max() - storage.y_min() << '\n'
-              << " nz  = " << storage.z_max() << '\n'
-              << "iter = " << num_iter << '\n'
-              << "time = " << time << "s\n";
-}
+double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, std::size_t itrs, std::size_t halo) {
+    assert(0 < xsize && 0 < ysize && 0 < zsize && 0 < itrs);
 
+    constexpr T alpha = static_cast<T>(1) / 32;
+    const std::size_t xmin = halo, xmax = xsize - halo;
+    const std::size_t ymin = halo, ymax = ysize - halo;
+    const std::size_t zmax = zsize;
 
-template<typename T>
-double run_simulation(std::size_t x, std::size_t y, std::size_t z, std::size_t iter, std::size_t halo) {
-    assert(0 < x && 0 < y && 0 < z && 0 < iter);
+    T *u, *v;
+    std::ofstream os;
 
-    Storage3D<T> input(x, y, z, halo);
-    input.initialize();
-    Storage3D<T> output(x, y, z, halo);
-    output.initialize();
+    u = new T[xsize * ysize * zsize];
+    v = new T[xsize * ysize];
 
-    constexpr T alpha = 1 / static_cast<T>(32);
+    utils::initialise(u, xsize, ysize, zsize);
 
-    std::ofstream fout;
-    fout.open("in_field.csv");
-    input.write_file(fout);
-    fout.close();
+    os.open("in_field.csv");
+    utils::write_file(os, u, xsize, ysize, zsize);
+    os.close();
+
     const time_point start = std::chrono::steady_clock::now();
 
-    apply_diffusion<T>(input, output, alpha, iter, x, y, halo);
+    #pragma acc data copy(u[0:xsize*ysize*zsize]) create(v[0:xsize*ysize])
+    {
+        for(std::size_t i = 0; i < itrs; ++i) {
+            update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+            update_interior(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+        }
+        update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    }
 
     const time_point end = std::chrono::steady_clock::now();
-    update_halo<T>(output);
-    fout.open("out_field.csv");
-    output.write_file(fout);
-    fout.close();
 
-    const double time = std::chrono::duration<double, std::milli>(end - start).count() / 1000;
-    report_time(output, iter, time);
+    os.open("out_field.csv");
+    utils::write_file(os, u, xsize, ysize, zsize);
+    os.close();
 
-    return time;
+    return std::chrono::duration<double, std::milli>(end - start).count() / 1000;
 }
 
 
@@ -147,13 +141,13 @@ int templated_main(int argc, char const **argv) {
         }
 
         std::cout << "================================================================================\n";
-        std::cout << "   / \\ "                                            << std::endl;
-        std::cout << "  / | \\                                 _ _"        << std::endl;
-        std::cout << "  | | | +-+-+  +-+  +   +  +-+  +  +   /   \\  +--"  << std::endl;
-        std::cout << "  /\\ \\/   |    |    |\\  |  |    |  |       /  |  |" << std::endl;
-        std::cout << "  | | |   |    +-+  | \\ |  |    |  |      /   |  |" << std::endl;
-        std::cout << "  \\ | /   |    |    |  \\|  |    |  |     /    |  |" << std::endl;
-        std::cout << "   \\ /    +    +-+  +   +  +-+  +  +-+  +--+  +--"  << std::endl;
+        std::cout << "   / \\"                                               << '\n';
+        std::cout << "  / | \\                                 _ _"          << '\n';
+        std::cout << "  | | | +-+-+  +-+  +   +  +-+  +  +   /   \\  +--"    << '\n';
+        std::cout << "  /\\ \\/   |    |    |\\  |  |    |  |       /  |  |" << '\n';
+        std::cout << "  | | |   |    +-+  | \\ |  |    |  |      /   |  |"   << '\n';
+        std::cout << "  \\ | /   |    |    |  \\|  |    |  |     /    |  |"  << '\n';
+        std::cout << "   \\ /    +    +-+  +   +  +-+  +  +-+  +--+  +--"    << '\n';
         std::cout << "================================================================================\n";
         std::cout << "                             Welcome to stencil2d!\n";
         std::cout << "Version    :: C++ with OpenACC\n";
@@ -161,12 +155,14 @@ int templated_main(int argc, char const **argv) {
         std::cout << "Boundaries :: (" << halo << ", " << halo << ", " << 0 << ")\n";
         std::cout << "Iterations :: " << iters << '\n';
         std::cout << "Real size  :: " << sizeof(T) << '\n';
+        std::cout << "OpenACC    :: "
+        #ifdef _OPENACC
+                  << "Enabled\n";
+        #else
+                  << "Disabled\n";
+        #endif
         std::cout << "================================================================================\n";
-        //acc_device_t dev = acc_get_device_type();
-        //int num = acc_get_num_devices(dev);
-        
-        //std::cout << num << std::endl;
-        //std::cout << "OpenACC Version: " << openacc_version() << std::endl;
+
         const double time = run_simulation<T>(x + 2 * halo, y + 2 * halo, z, iters, halo);
 
         std::cout << "Runtime    :: " << time << "s\n";

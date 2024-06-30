@@ -3,6 +3,7 @@ main
 in_field.csv
 out_field.csv
 plot.png
+jacobi
 kernels
 parallel
 optimised
