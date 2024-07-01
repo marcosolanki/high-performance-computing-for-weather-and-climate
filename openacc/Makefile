@@ -8,7 +8,7 @@ all: $(VERSIONS)
 main: main.cpp kernels.hpp parallel.hpp optimised.hpp utils.hpp
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
-jacobi: jacobi.cpp timer.h
+jacobi: jacobi.cpp timer.hpp
 	$(ACCCXX) -o $@ $< $(ACCFLAGS)
 
 # stencil: utils.F90 stencil2d.F90
@@ -19,4 +19,4 @@ again: clean all
 
 .PHONY: clean
 clean:
-	$(RM) $(VERSIONS) in_field.csv out_field.csv plot.png *.i *.lst *.mod *.o
+	$(RM) in_field.csv out_field.csv plot.png *.i *.lst *.mod *.o $(VERSIONS)

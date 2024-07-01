@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef TIMER_HPP
+#define TIMER_HPP
 
 #include <stdlib.h>
 
@@ -64,4 +64,4 @@ double GetTimer()
 #endif
 }
 
-#endif // TIMER_H
+#endif // TIMER_HPP

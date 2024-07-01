@@ -18,7 +18,7 @@
 #include <string.h>
 #include <openacc.h>
 #include <stdio.h>
-#include "timer.h"
+#include "timer.hpp"
 
 #define NN 4096
 #define NM 4096
