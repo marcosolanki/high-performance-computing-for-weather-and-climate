@@ -22,7 +22,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     const std::size_t zmax = zsize;
 
     cudaStream_t stream;
-    T *u, *v, *w, *u_host;
+    T *u, *v, *u_host;
     std::ofstream os;
 
     check(cudaMallocHost(&u_host, xsize * ysize * zsize * sizeof(T)));
@@ -37,12 +37,12 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     #if CUDART_VERSION >= 11020
     check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
-    check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
-    if(mode == Mode::laplap_global || mode == Mode::laplap_shared) check(cudaMallocAsync(&w, xsize * ysize * zsize * sizeof(T), stream));
+    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
+        check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
     #else
     check(cudaMalloc(&u, xsize * ysize * zsize * sizeof(T)));
-    check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
-    if(mode == laplap_global || mode == laplap_shared) check(cudaMalloc(&w, xsize * ysize * zsize * sizeof(T)));
+    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
+        check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
     #endif
 
     check(cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream));
@@ -77,12 +77,12 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     #if CUDART_VERSION >= 11020
     check(cudaFreeAsync(u, stream));
-    check(cudaFreeAsync(v, stream));
-    if(mode == Mode::laplap_global || mode == Mode::laplap_shared) check(cudaFreeAsync(w, stream));
+    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
+        check(cudaFreeAsync(v, stream));
     #else
     check(cudaFree(u));
-    check(cudaFree(v));
-    if(mode == laplap_global || mode == laplap_shared) check(cudaFree(w));
+    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
+        check(cudaFree(v));
     #endif
 
     check(cudaStreamDestroy(stream));
