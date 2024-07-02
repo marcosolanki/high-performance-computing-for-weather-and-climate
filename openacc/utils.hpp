@@ -49,7 +49,7 @@ Mode mode_from_string(const char *s) {
 std::string get_mode_desc(Mode mode) {
     switch(mode) {
         case Mode::kernels: return "OpenACC acceleration using only \"kernels\" pragmas.";
-        case Mode::parallel: return "OpenACC acceleration using only \"parallel loop collapse()\" pragmas.";
+        case Mode::parallel: return "OpenACC acceleration using only \"parallel loop collapse\" pragmas.";
         case Mode::optimised: return "OpenACC acceleration using all possible pragmas.";
         default: __builtin_unreachable();
     }

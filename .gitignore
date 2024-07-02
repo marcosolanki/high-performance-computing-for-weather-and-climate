@@ -3,10 +3,6 @@ main
 in_field.csv
 out_field.csv
 plot.png
-jacobi
-kernels
-parallel
-optimised
 .gt_cache
 .ipynb_checkpoints
 in_field.npy
