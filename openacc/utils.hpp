@@ -1,6 +1,8 @@
 #pragma once
 
+#include <iomanip>
 #include <iostream>
+#include <limits>
 
 
 namespace {
@@ -83,7 +85,8 @@ void write_file(std::ostream &os, T *u,
     for(std::size_t k = 0; k < zsize; ++k)
         for(std::size_t j = 0; j < ysize; ++j)
             for(std::size_t i = 0; i < xsize; ++i)
-                os << u[index(i, j, k, xsize, ysize)]
+                os << std::setprecision(std::numeric_limits<double>::digits10)
+                   << u[index(i, j, k, xsize, ysize)]
                    << ((k < zsize - 1 || j < ysize - 1 || i < xsize - 1) ? ',' : '\n');
 }
 

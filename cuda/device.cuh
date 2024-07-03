@@ -98,7 +98,7 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
 
 
 template<typename T>
-void update_interior_biharmonic(cudaStream_t &stream, T *u, T alpha, std::size_t xmin,
+void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
                                 std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                 std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
@@ -107,7 +107,8 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T alpha, std::size_t
                         (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                         (zmax + (block_dim.z - 1)) / block_dim.z);
 
-    kernels::biharmonic_operator_update<<<grid_dim, block_dim, 0, stream>>>(u, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    kernels::biharmonic_operator_update<<<grid_dim, block_dim, 0, stream>>>(u, v, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    kernels::update_interior<<<grid_dim, block_dim, 0, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
 }
 
 } // namespace device

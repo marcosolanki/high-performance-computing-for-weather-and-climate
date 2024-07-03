@@ -200,7 +200,7 @@ __global__ void laplacian_shared_update(T *u, const T *v, T alpha, std::size_t x
 
 
 template<typename T>
-__global__ void biharmonic_operator_update(T *u, T alpha, std::size_t xmin, std::size_t xmax, std::size_t ymin,
+__global__ void biharmonic_operator_update(const T *u, T *v, std::size_t xmin, std::size_t xmax, std::size_t ymin,
                                            std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmin;
@@ -215,14 +215,14 @@ __global__ void biharmonic_operator_update(T *u, T alpha, std::size_t xmin, std:
     //         1
 
     if(i < xmax && j < ymax && k < zmax)
-        u[index(i, j, k, xsize, ysize)] -= alpha * (
-              1 * (u[index(i + 2, j, k, xsize, ysize)] + u[index(i, j + 2, k, xsize, ysize)]
+        v[index(i, j, k, xsize, ysize)]
+            = 1 * (u[index(i + 2, j, k, xsize, ysize)] + u[index(i, j + 2, k, xsize, ysize)]
                 +  u[index(i - 2, j, k, xsize, ysize)] + u[index(i, j - 2, k, xsize, ysize)])
             + 2 * (u[index(i + 1, j + 1, k, xsize, ysize)] + u[index(i + 1, j - 1, k, xsize, ysize)]
                 +  u[index(i - 1, j + 1, k, xsize, ysize)] + u[index(i - 1, j - 1, k, xsize, ysize)])
             - 8 * (u[index(i + 1, j, k, xsize, ysize)] + u[index(i, j + 1, k, xsize, ysize)]
                 +  u[index(i - 1, j, k, xsize, ysize)] + u[index(i, j - 1, k, xsize, ysize)])
-           + 20 *  u[index(i, j, k, xsize, ysize)]);
+           + 20 *  u[index(i, j, k, xsize, ysize)];
 }
 
 

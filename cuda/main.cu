@@ -37,12 +37,10 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     #if CUDART_VERSION >= 11020
     check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
-    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
-        check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
+    check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
     #else
     check(cudaMalloc(&u, xsize * ysize * zsize * sizeof(T)));
-    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
-        check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
+    check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
     #endif
 
     check(cudaMemcpyAsync(u, u_host, xsize * ysize * zsize * sizeof(T), cudaMemcpyHostToDevice, stream));
@@ -65,7 +63,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
         case Mode::biharm_global: {
             for(std::size_t i = 0; i < itrs; ++i) {
                 device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-                device::update_interior_biharmonic(stream, u, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                device::update_interior_biharmonic(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
             }
             break;
         }
@@ -77,12 +75,10 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     #if CUDART_VERSION >= 11020
     check(cudaFreeAsync(u, stream));
-    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
-        check(cudaFreeAsync(v, stream));
+    check(cudaFreeAsync(v, stream));
     #else
     check(cudaFree(u));
-    if(mode == Mode::laplap_global || mode == Mode::laplap_shared)
-        check(cudaFree(v));
+    check(cudaFree(v));
     #endif
 
     check(cudaStreamDestroy(stream));
