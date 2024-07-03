@@ -2,7 +2,7 @@
 main
 in_field.csv
 out_field.csv
-plot.png
+*.png
 .gt_cache
 .ipynb_checkpoints
 in_field.npy

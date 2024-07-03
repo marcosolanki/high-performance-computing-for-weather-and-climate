@@ -14,8 +14,7 @@ def read_field_from_npy(filename):
     return np.load(filename)
 
 
-def validate_results():
-    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+def plot_results():
 
     if Path('in_field.npy').is_file():
         in_field = read_field_from_npy('in_field.npy')
@@ -31,6 +30,8 @@ def validate_results():
     else:
         raise Exception('Missing out_field.npy/out_field.csv.')
 
+    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+
     im1 = axs[0].imshow(in_field[in_field.shape[0] // 2, :, :], origin='lower', vmin=-0.1, vmax=1.1)
     fig.colorbar(im1, ax=axs[0])
     axs[0].set_title('Initial condition')
@@ -44,4 +45,5 @@ def validate_results():
 
 
 if __name__ == '__main__':
-    validate_results()
+    print('NOTE: Script should be called from a working directory (e.g., \'cuda/\').')
+    plot_results()
