@@ -7,7 +7,16 @@
 # ******************************************************
 import click
 import gt4py as gt
-import gt4py.cartesian.gtscript as gtscript
+
+try:
+    # Modern GT4Py (as is available on PyPI):
+    import gt4py.cartesian.gtscript as gtscript
+    legacy_api = False
+except ImportError:
+    # Ancient GT4Py (as is installed on Piz Daint):
+    import gt4py.gtscript as gtscript
+    legacy_api = True
+
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -138,9 +147,6 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend='numpy', plot_result=False):
 
     alpha = 1.0 / 32.0
 
-    # default origin
-    dorigin = (0, num_halo, num_halo)
-
     # allocate input field
     xsize = nx + 2 * num_halo
     ysize = ny + 2 * num_halo
@@ -180,24 +186,28 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend='numpy', plot_result=False):
         **kwargs,
     )
 
-    # apply_diffusion(diffusion_stencil, in_field, out_field, alpha, num_halo)
-
     # time the actual work
     tic = time.time()
-    out_field = gt.storage.zeros(
-        backend=backend, shape=(nz, ny + 2 * num_halo, nx + 2 * num_halo), dtype=float
-    )
-    in_field = gt.storage.from_array(data=in_field_np, backend=backend)
-    apply_diffusion(
-        diffusion_stencil, in_field, out_field, alpha, num_halo, num_iter=num_iter
-    )
-    out_field_np = out_field.get()
+    
+    if legacy_api:
+        in_field = gt.storage.from_array(backend=backend, default_origin=(0, num_halo, num_halo), data=in_field_np)
+        out_field = gt.storage.zeros(backend=backend, default_origin=(0, num_halo, num_halo),
+                                     shape=(nz, ny + 2 * num_halo, nx + 2 * num_halo), dtype=float)
+    else:
+        in_field = gt.storage.from_array(backend=backend, data=in_field_np)
+        out_field = gt.storage.zeros(backend=backend, shape=(nz, ny + 2 * num_halo, nx + 2 * num_halo), dtype=float)
+    
+    apply_diffusion(diffusion_stencil, in_field, out_field, alpha, num_halo, num_iter=num_iter)
+    
+    if legacy_api:
+        out_field_np = np.asarray(out_field)
+    else:
+        out_field_np = out_field.get()
+    
     toc = time.time()
     print(f'Elapsed time for work = {toc - tic}s.')
 
     # save output field
-    # swap first and last axes for compatibility with day1/stencil2d.py
-    #np.save('out_field', np.swapaxes(out_field_np, 0, 2))
     np.save('out_field', out_field_np)
 
     if plot_result:
