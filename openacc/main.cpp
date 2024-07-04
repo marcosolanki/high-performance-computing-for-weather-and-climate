@@ -25,7 +25,6 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     std::ofstream os;
 
     u = new T[xsize * ysize * zsize];
-    v = new T[xsize * ysize];
 
     utils::initialise(u, xsize, ysize, zsize);
 
@@ -35,7 +34,13 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     const time_point start = std::chrono::steady_clock::now();
 
-    #pragma acc data copy(u[0:xsize*ysize*zsize]) create(v[0:xsize*ysize])
+    v = static_cast<T*>(acc_malloc(xsize * ysize * zsize * sizeof(T)));
+    if(v == NULL) {
+        std::cerr << "ERROR: acc_malloc() returned NULL.\n";
+        exit(EXIT_FAILURE);
+    }
+
+    #pragma acc data copy(u[0:xsize*ysize*zsize])
     {
         switch(mode) {
             case Mode::kernels: {
@@ -65,6 +70,8 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
             default: __builtin_unreachable();
         }
     }
+
+    acc_free(v);
 
     const time_point end = std::chrono::steady_clock::now();
 
