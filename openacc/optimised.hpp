@@ -5,6 +5,16 @@
 
 namespace optimised {
 
+// update_boundaries<T>():
+// Enforces periodic boundary conditions in x and y.
+//
+// Input:   u               :: Input field (located on the device)
+//          xmin, xmax      :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
+//          ymin, ymax      :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
+//          zmax            :: Alias for zsize
+//          xsize, ysize    :: Dimensions of the domain (including boundary points)
+//          T               :: Numeric real type
+// Output:  u               :: Output field (located on the device)
 template<typename T>
 void update_boundaries(T *u, std::size_t xmin, std::size_t xmax,
                        std::size_t ymin, std::size_t ymax, std::size_t zmax,
@@ -43,6 +53,17 @@ void update_boundaries(T *u, std::size_t xmin, std::size_t xmax,
 }
 
 
+// update_interior<T>():
+// Performs the fourth-order diffusion update in the interior of the domain using two consecutive 5-point Laplacian stencils.
+//
+// Input:   u               :: Input field (located on the device)
+//          v               :: Temporary field to store intermediate results in (located on the device)
+//          xmin, xmax      :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
+//          ymin, ymax      :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
+//          zmax            :: Alias for zsize
+//          xsize, ysize    :: Dimensions of the domain (including boundary points)
+//          T               :: Numeric real type
+// Output:  u               :: Output field (located on the device)
 template<typename T>
 void update_interior(T *u, T *v, T alpha, std::size_t xmin, std::size_t xmax, std::size_t ymin,
                      std::size_t ymax, std::size_t zmax, std::size_t xsize, std::size_t ysize) {

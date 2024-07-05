@@ -14,7 +14,7 @@ using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
 
 // run_simulation<T>():
-// Runs the 4th-order diffusion simulation on a CUDA-enabled GPU and writes the results to output files.
+// Runs the 4th-order diffusion simulation on a CUDA-enabled GPU and writes its results to some output files.
 //
 // Input:   xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
 //          itrs                :: Number of timestep iterations

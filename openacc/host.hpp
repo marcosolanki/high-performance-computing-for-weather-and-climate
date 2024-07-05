@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.cuh"
+#include "utils.hpp"
 
 #include <iomanip>
 #include <limits>

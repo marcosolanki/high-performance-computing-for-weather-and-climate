@@ -1,8 +1,6 @@
 #pragma once
 
-#include <iomanip>
 #include <iostream>
-#include <limits>
 
 
 namespace {
@@ -66,8 +64,8 @@ Mode mode_from_string(const char *s) {
 // Returns a brief description of a given computation mode.
 std::string get_mode_desc(Mode mode) {
     switch(mode) {
-        case Mode::laplap_global: return "Double 5-point laplacian stencil. Uses global memory only.";
-        case Mode::laplap_shared: return "Double 5-point laplacian stencil. Uses shared memory.";
+        case Mode::laplap_global: return "Double 5-point Laplacian stencil. Uses global memory only.";
+        case Mode::laplap_shared: return "Double 5-point Laplacian stencil. Uses shared memory.";
         case Mode::biharm_global: return "Single 13-point biharmonic stencil. Uses global memory only.";
         default: __builtin_unreachable();
     }
