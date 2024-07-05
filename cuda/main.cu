@@ -28,7 +28,6 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     constexpr T alpha = static_cast<T>(1) / 32;
     const std::size_t xmin = bdry, xmax = xsize - bdry;
     const std::size_t ymin = bdry, ymax = ysize - bdry;
-    const std::size_t zmax = zsize;
 
     cudaStream_t stream;
     T *u, *v, *u_host;
@@ -59,28 +58,28 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     switch(mode) {
         case Mode::laplap_global: {
             for(std::size_t i = 0; i < itrs; ++i) {
-                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-                device::update_interior_double_laplacian(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+                device::update_interior_double_laplacian(stream, u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
             }
             break;
         }
         case Mode::laplap_shared: {
             for(std::size_t i = 0; i < itrs; ++i) {
-                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-                device::update_interior_double_laplacian_shared(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+                device::update_interior_double_laplacian_shared(stream, u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
             }
             break;
         }
         case Mode::biharm_global: {
             for(std::size_t i = 0; i < itrs; ++i) {
-                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-                device::update_interior_biharmonic(stream, u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+                device::update_interior_biharmonic(stream, u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
             }
             break;
         }
         default: __builtin_unreachable();
     }
-    device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
 
     check(cudaMemcpyAsync(u_host, u, xsize * ysize * zsize * sizeof(T), cudaMemcpyDeviceToHost, stream));
 

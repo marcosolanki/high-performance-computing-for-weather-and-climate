@@ -29,7 +29,6 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     constexpr T alpha = static_cast<T>(1) / 32;
     const std::size_t xmin = bdry, xmax = xsize - bdry;
     const std::size_t ymin = bdry, ymax = ysize - bdry;
-    const std::size_t zmax = zsize;
 
     T *u, *v;
     std::ofstream os;
@@ -55,26 +54,26 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
         switch(mode) {
             case Mode::kernels: {
                 for(std::size_t i = 0; i < itrs; ++i) {
-                    kernels::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-                    kernels::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                    kernels::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+                    kernels::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 }
-                kernels::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                kernels::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 break;
             }
             case Mode::parallel: {
                 for(std::size_t i = 0; i < itrs; ++i) {
-                    parallel::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-                    parallel::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                    parallel::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+                    parallel::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 }
-                parallel::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                parallel::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 break;
             }
             case Mode::optimised: {
                 for(std::size_t i = 0; i < itrs; ++i) {
-                    optimised::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
-                    optimised::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                    optimised::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+                    optimised::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 }
-                optimised::update_boundaries(u, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+                optimised::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 break;
             }
             default: __builtin_unreachable();
@@ -121,14 +120,6 @@ int templated_main(int argc, char const **argv) {
             }
         }
 
-        std::cout << "================================================================================\n";
-        std::cout << "   / \\"                                               << '\n';
-        std::cout << "  / | \\                                 _ _"          << '\n';
-        std::cout << "  | | | +-+-+  +-+  +   +  +-+  +  +   /   \\  +--"    << '\n';
-        std::cout << "  /\\ \\/   |    |    |\\  |  |    |  |       /  |  |" << '\n';
-        std::cout << "  | | |   |    +-+  | \\ |  |    |  |      /   |  |"   << '\n';
-        std::cout << "  \\ | /   |    |    |  \\|  |    |  |     /    |  |"  << '\n';
-        std::cout << "   \\ /    +    +-+  +   +  +-+  +  +-+  +--+  +--"    << '\n';
         std::cout << "================================================================================\n";
         std::cout << "                             Welcome to stencil2d!\n";
         std::cout << "Version    :: C++ with OpenACC\n";
