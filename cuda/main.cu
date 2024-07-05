@@ -13,12 +13,21 @@
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
 
+// run_simulation<T>():
+// Runs the 4th-order diffusion simulation on a CUDA-enabled GPU and writes the results to output files.
+//
+// Input:   xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
+//          itrs                :: Number of timestep iterations
+//          bdry                :: Number of boundary points (halo size)
+//          mode                :: Computation mode (double-5/13-point stencil(s) with/without shared memory)
+//          T                   :: Numeric real type
+// Output:  return (...)        :: Measured time (memory transfer + device allocation + computation) in seconds
 template<typename T>
-double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, std::size_t itrs, std::size_t halo, Mode mode) {
+double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, std::size_t itrs, std::size_t bdry, Mode mode) {
 
     constexpr T alpha = static_cast<T>(1) / 32;
-    const std::size_t xmin = halo, xmax = xsize - halo;
-    const std::size_t ymin = halo, ymax = ysize - halo;
+    const std::size_t xmin = bdry, xmax = xsize - bdry;
+    const std::size_t ymin = bdry, ymax = ysize - bdry;
     const std::size_t zmax = zsize;
 
     cudaStream_t stream;
@@ -36,9 +45,11 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     check(cudaStreamCreate(&stream));
 
     #if CUDART_VERSION >= 11020
+    // Requires at least CUDA v11.2 to be installed.
     check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
     check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
     #else
+    // Necessary for running on Piz Daint (as it only has CUDA v11.0 installed).
     check(cudaMalloc(&u, xsize * ysize * zsize * sizeof(T)));
     check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
     #endif
@@ -74,9 +85,11 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     check(cudaMemcpyAsync(u_host, u, xsize * ysize * zsize * sizeof(T), cudaMemcpyDeviceToHost, stream));
 
     #if CUDART_VERSION >= 11020
+    // Requires at least CUDA v11.2 to be installed.
     check(cudaFreeAsync(u, stream));
     check(cudaFreeAsync(v, stream));
     #else
+    // Necessary for running on Piz Daint (as it only has CUDA v11.0 installed).
     check(cudaFree(u));
     check(cudaFree(v));
     #endif
@@ -95,9 +108,16 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 }
 
 
+// templated_main<T>():
+// Main function with flexible numeric real type.
+//
+// Input:   argv            :: Input arguments
+//          argc            :: Number of input arguments
+//          T               :: Numeric real type
+// Output:  return (...)    :: Exit code (EXIT_SUCCESS or EXIT_FAILURE)
 template<typename T>
 int templated_main(int argc, char const **argv) {
-    constexpr std::size_t halo = 3;
+    constexpr std::size_t bdry = 3;
 
     if(argc == 6) {
         std::size_t x, y, z, itrs;
@@ -120,13 +140,13 @@ int templated_main(int argc, char const **argv) {
         std::cout << "                             Welcome to stencil2d!\n";
         std::cout << "Version    :: C++ with CUDA v" << CUDART_VERSION / 1000 << '.' << CUDART_VERSION / 10 % 100 << '\n';
         std::cout << "Interior   :: (" << x << ", " << y << ", " << z << ")\n";
-        std::cout << "Boundaries :: (" << halo << ", " << halo << ", " << 0 << ")\n";
+        std::cout << "Boundaries :: (" << bdry << ", " << bdry << ", " << 0 << ")\n";
         std::cout << "Iterations :: " << itrs << '\n';
         std::cout << "Real size  :: " << sizeof(T) << '\n';
         std::cout << "Exec. mode :: " << utils::get_mode_desc(mode) << '\n';
         std::cout << "================================================================================\n";
 
-        const double time = run_simulation<T>(x + 2 * halo, y + 2 * halo, z, itrs, halo, mode);
+        const double time = run_simulation<T>(x + 2 * bdry, y + 2 * bdry, z, itrs, bdry, mode);
 
         std::cout << "Runtime    :: " << time << "s\n";
         std::cout << "================================================================================\n";

@@ -7,6 +7,13 @@
 
 namespace host {
 
+// initialise<T>():
+// Initialises the domain.
+//
+// Input:   u_host              :: Uninitialised field (located on the host)
+//          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
+//          T                   :: Numeric real type
+// Output:  u_host              :: Initialised field (located on the host)
 template<typename T>
 void initialise(T *u_host, std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
@@ -25,8 +32,16 @@ void initialise(T *u_host, std::size_t xsize, std::size_t ysize, std::size_t zsi
 }
 
 
+// write_file<T>():
+// Writes field to a *.csv file.
+//
+// Input:   os                  :: Output stream
+//          u_host              :: Field (located on the host)
+//          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
+//          T                   :: Numeric real type
+// Output:  os                  :: Output stream (updated)
 template<typename T>
-void write_file(std::ostream &os, T *u_host,
+void write_file(std::ostream &os, const T *u_host,
                 std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
     os << xsize << ',' << ysize << ',' << zsize << '\n';

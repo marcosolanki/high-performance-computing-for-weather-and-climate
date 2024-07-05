@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -9,18 +7,20 @@
 
 namespace {
 
+// Translates a 3D index to a 1D/linear index.
 static inline __host__ __device__ std::size_t index(std::size_t i, std::size_t j, std::size_t k,
                                                     std::size_t xsize, std::size_t ysize) {
     return i + j * xsize + k * xsize * ysize;
 }
 
 
+// Check whether a given CUDA runtime API call returned an error, and if so, exit gracefully.
 static inline void check(cudaError_t error) {
     if(error != cudaSuccess) {
         std::cerr << "ERROR: A CUDA runtime API call returned a cudaError_t != cudaSuccess.\n"
                   << "Error name:   \"" << cudaGetErrorName(error) << "\"\n"
                   << "Error string: \"" << cudaGetErrorString(error) << "\"\n";
-        std::cout << "================================================================================\n";
+        std::cerr << "================================================================================\n";
         exit(EXIT_FAILURE);
     }
 }
@@ -38,6 +38,7 @@ enum class Mode {
 
 namespace utils {
 
+// Prints an explanation of the input syntax. Called when invalid input is detected.
 void print_args_errmsg() {
     std::cerr << "================================================================================\n";
     std::cerr << "                             Welcome to stencil2d!\n";
@@ -52,6 +53,7 @@ void print_args_errmsg() {
 }
 
 
+// Translates an input string to a computation mode.
 Mode mode_from_string(const char *s) {
     std::string mode(s);
     if(mode == "laplap-global") return Mode::laplap_global;
@@ -61,6 +63,7 @@ Mode mode_from_string(const char *s) {
 }
 
 
+// Returns a brief description of a given computation mode.
 std::string get_mode_desc(Mode mode) {
     switch(mode) {
         case Mode::laplap_global: return "Double 5-point laplacian stencil. Uses global memory only.";

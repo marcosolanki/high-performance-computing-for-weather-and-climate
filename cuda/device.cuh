@@ -5,6 +5,17 @@
 
 namespace device {
 
+// update_boundaries<T>():
+// Enforces periodic boundary conditions in x and y.
+//
+// Input:   stream          :: CUDA stream used
+//          u               :: Input field (located on the device)
+//          xmin, xmax      :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
+//          ymin, ymax      :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
+//          zmax            :: Alias for zsize
+//          xsize, ysize    :: Dimensions of the domain (including boundary points)
+//          T               :: Numeric real type
+// Output:  u               :: Output field (located on the device)
 template<typename T>
 void update_boundaries(cudaStream_t &stream, T *u,
                        std::size_t xmin, std::size_t xmax,
@@ -57,6 +68,18 @@ void update_boundaries(cudaStream_t &stream, T *u,
 }
 
 
+// update_interior_double_laplacian<T>():
+// Performs the fourth-order diffusion update in the interior of the domain using two consecutive 5-point Laplacian stencils and no shared memory.
+//
+// Input:   stream          :: CUDA stream used
+//          u               :: Input field (located on the device)
+//          v               :: Temporary field to store intermediate results in (located on the device)
+//          xmin, xmax      :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
+//          ymin, ymax      :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
+//          zmax            :: Alias for zsize
+//          xsize, ysize    :: Dimensions of the domain (including boundary points)
+//          T               :: Numeric real type
+// Output:  u               :: Output field (located on the device)
 template<typename T>
 void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
                                       std::size_t xmax, std::size_t ymin, std::size_t ymax,
@@ -76,6 +99,18 @@ void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha,
 }
 
 
+// update_interior_double_laplacian_shared<T>():
+// Performs the fourth-order diffusion update in the interior of the domain using two consecutive 5-point Laplacian stencils and shared memory.
+//
+// Input:   stream          :: CUDA stream used
+//          u               :: Input field (located on the device)
+//          v               :: Temporary field to store intermediate results in (located on the device)
+//          xmin, xmax      :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
+//          ymin, ymax      :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
+//          zmax            :: Alias for zsize
+//          xsize, ysize    :: Dimensions of the domain (including boundary points)
+//          T               :: Numeric real type
+// Output:  u               :: Output field (located on the device)
 template<typename T>
 void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
                                              std::size_t xmax, std::size_t ymin, std::size_t ymax,
@@ -97,6 +132,18 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
 }
 
 
+// update_interior_biharmonic<T>():
+// Performs the fourth-order diffusion update in the interior of the domain using a single 13-point biharmonic stencil and no shared memory.
+//
+// Input:   stream          :: CUDA stream used
+//          u               :: Input field (located on the device)
+//          v               :: Temporary field to store intermediate results in (located on the device)
+//          xmin, xmax      :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
+//          ymin, ymax      :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
+//          zmax            :: Alias for zsize
+//          xsize, ysize    :: Dimensions of the domain (including boundary points)
+//          T               :: Numeric real type
+// Output:  u               :: Output field (located on the device)
 template<typename T>
 void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
                                 std::size_t xmax, std::size_t ymin, std::size_t ymax,
@@ -107,7 +154,7 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
                         (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                         (zmax + (block_dim.z - 1)) / block_dim.z);
 
-    kernels::biharmonic_operator_update<<<grid_dim, block_dim, 0, stream>>>(u, v, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
+    kernels::biharmonic_operator<<<grid_dim, block_dim, 0, stream>>>(u, v, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
     kernels::update_interior<<<grid_dim, block_dim, 0, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, zmax, xsize, ysize);
 }
 
