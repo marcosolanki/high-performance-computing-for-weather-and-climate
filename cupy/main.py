@@ -130,14 +130,12 @@ def main(nx, ny, nz, num_iter, num_halo=3, plot_result=False):
     in_field_np = np.zeros((zsize, ysize, xsize))
 
     # Prepare input field:
-    imin = int(0.25 * zsize + 0.5)
-    imax = int(0.75 * zsize + 0.5)
+    imin = int(0.25 * xsize + 0.5)
+    imax = int(0.75 * xsize + 0.5)
     jmin = int(0.25 * ysize + 0.5)
     jmax = int(0.75 * ysize + 0.5)
-    kmin = int(0.25 * xsize + 0.5)
-    kmax = int(0.75 * xsize + 0.5)
 
-    in_field_np[imin:imax+1, jmin:jmax+1, kmin:kmax+1] = 1
+    in_field_np[:, jmin:jmax+1, imin:imax+1] = 1
 
     # Write input field to file:
     np.save('in_field', in_field_np)

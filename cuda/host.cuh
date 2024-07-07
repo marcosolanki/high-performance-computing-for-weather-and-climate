@@ -29,7 +29,7 @@ void initialise(T *u_host, std::size_t xsize, std::size_t ysize, std::size_t zsi
         for(std::size_t j = 0; j < ysize; ++j)
             for(std::size_t i = 0; i < xsize; ++i)
                 u_host[index(i, j, k, xsize, ysize)] =
-                    static_cast<T>(imin <= i && i <= imax && jmin <= j && j <= jmax && kmin <= k && k <= kmax);
+                    static_cast<T>(imin <= i && i <= imax && jmin <= j && j <= jmax);
 }
 
 
