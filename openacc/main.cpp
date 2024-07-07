@@ -8,7 +8,9 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef _OPENACC
 #include <openacc.h>
+#endif
 
 
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
@@ -43,7 +45,12 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 
     const time_point start = std::chrono::steady_clock::now();
 
+    #ifdef _OPENACC
     v = static_cast<T*>(acc_malloc(xsize * ysize * zsize * sizeof(T)));
+    #else
+    v = new T[xsize * ysize * zsize];
+    #endif
+
     if(v == NULL) {
         std::cerr << "ERROR: acc_malloc() returned NULL.\n";
         exit(EXIT_FAILURE);
@@ -80,7 +87,11 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
         }
     }
 
+    #ifdef _OPENACC
     acc_free(v);
+    #else
+    delete[] v;
+    #endif
 
     const time_point end = std::chrono::steady_clock::now();
 
