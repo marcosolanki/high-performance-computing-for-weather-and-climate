@@ -81,10 +81,10 @@ __global__ void update_west(T *u, std::size_t xmin, std::size_t ymin, std::size_
     // k in [0, zsize[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x;
-    const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y + ymin;
+    const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y;
     const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
 
-    if(i < xmin && j < ymax && k < zsize)
+    if(i < xmin && j < ysize && k < zsize)
         u[index(i, j, k, xsize, ysize)] = u[index(i + xint, j, k, xsize, ysize)];
 }
 
@@ -109,10 +109,10 @@ __global__ void update_east(T *u, std::size_t xmax, std::size_t ymin, std::size_
     // k in [0, zsize[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmax;
-    const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y + ymin;
+    const std::size_t j = blockDim.y * blockIdx.y + threadIdx.y;
     const std::size_t k = blockDim.z * blockIdx.z + threadIdx.z;
 
-    if(i < xsize && j < ymax && k < zsize)
+    if(i < xsize && j < ysize && k < zsize)
         u[index(i, j, k, xsize, ysize)] = u[index(i - xint, j, k, xsize, ysize)];
 }
 

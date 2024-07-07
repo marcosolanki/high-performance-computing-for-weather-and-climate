@@ -48,7 +48,7 @@ void update_boundaries(cudaStream_t &stream, T *u,
     // k in [0, zsize[
     constexpr dim3 block_dim_west(3, 32, 1);
     const dim3 grid_dim_west((xmin + (block_dim_west.x - 1)) / block_dim_west.x,
-                             (ymax - ymin + (block_dim_west.y - 1)) / block_dim_west.y,
+                             (ysize + (block_dim_west.y - 1)) / block_dim_west.y,
                              (zsize + (block_dim_west.z - 1)) / block_dim_west.z);
 
     // Ranges:
@@ -57,7 +57,7 @@ void update_boundaries(cudaStream_t &stream, T *u,
     // k in [0, zsize[
     constexpr dim3 block_dim_east(3, 32, 1);
     const dim3 grid_dim_east((xsize - xmax + (block_dim_east.x - 1)) / block_dim_east.x,
-                             (ymax - ymin + (block_dim_east.y - 1)) / block_dim_east.y,
+                             (ysize + (block_dim_east.y - 1)) / block_dim_east.y,
                              (zsize + (block_dim_east.z - 1)) / block_dim_east.z);
 
     kernels::update_south<<<grid_dim_south, block_dim_south, 0, stream>>>(u, xmin, xmax, ymin, yint, xsize, ysize, zsize);

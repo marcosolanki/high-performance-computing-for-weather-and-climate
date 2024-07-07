@@ -37,13 +37,13 @@ void update_boundaries(T *u, std::size_t xmin, std::size_t xmax, std::size_t ymi
 
         // West edge (including corners):
         for(std::size_t k = 0; k < zsize; ++k)
-            for(std::size_t j = ymin; j < ymax; ++j)
+            for(std::size_t j = 0; j < ysize; ++j)
                 for(std::size_t i = 0; i < xmin; ++i)
                     u[index(i, j, k, xsize, ysize)] = u[index(i + xint, j, k, xsize, ysize)];
 
         // East edge (including corners):
         for(std::size_t k = 0; k < zsize; ++k)
-            for(std::size_t j = ymin; j < ymax; ++j)
+            for(std::size_t j = 0; j < ysize; ++j)
                 for(std::size_t i = xmax; i < xsize; ++i)
                     u[index(i, j, k, xsize, ysize)] = u[index(i - xint, j, k, xsize, ysize)];
     }
@@ -70,21 +70,21 @@ void update_interior(T *u, T *v, T alpha, std::size_t xmin, std::size_t xmax, st
         for(std::size_t k = 0; k < zsize; ++k)
             for(std::size_t j = ymin - 1; j < ymax + 1; ++j)
                 for(std::size_t i = xmin - 1; i < xmax + 1; ++i)
-                    v[index(i, j, k, xsize, ysize)] = -static_cast<T>(4) * u[index(i, j, k, xsize, ysize)]
-                                                                         + u[index(i - 1, j, k, xsize, ysize)]
-                                                                         + u[index(i + 1, j, k, xsize, ysize)]
-                                                                         + u[index(i, j - 1, k, xsize, ysize)]
-                                                                         + u[index(i, j + 1, k, xsize, ysize)];
+                    v[index(i, j, k, xsize, ysize)] = -4 * u[index(i, j, k, xsize, ysize)]
+                                                         + u[index(i - 1, j, k, xsize, ysize)]
+                                                         + u[index(i + 1, j, k, xsize, ysize)]
+                                                         + u[index(i, j - 1, k, xsize, ysize)]
+                                                         + u[index(i, j + 1, k, xsize, ysize)];
 
         // Apply the second Laplacian and update the field:
         for(std::size_t k = 0; k < zsize; ++k)
             for(std::size_t j = ymin; j < ymax; ++j)
                 for(std::size_t i = xmin; i < xmax; ++i)
-                    u[index(i, j, k, xsize, ysize)] += alpha * (static_cast<T>(4) * v[index(i, j, k, xsize, ysize)]
-                                                                                  - v[index(i - 1, j, k, xsize, ysize)]
-                                                                                  - v[index(i + 1, j, k, xsize, ysize)]
-                                                                                  - v[index(i, j - 1, k, xsize, ysize)]
-                                                                                  - v[index(i, j + 1, k, xsize, ysize)]);
+                    u[index(i, j, k, xsize, ysize)] -= alpha * (-4 * v[index(i, j, k, xsize, ysize)]
+                                                                   + v[index(i - 1, j, k, xsize, ysize)]
+                                                                   + v[index(i + 1, j, k, xsize, ysize)]
+                                                                   + v[index(i, j - 1, k, xsize, ysize)]
+                                                                   + v[index(i, j + 1, k, xsize, ysize)]);
     }
 }
 
