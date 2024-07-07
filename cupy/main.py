@@ -12,33 +12,6 @@ import matplotlib.pyplot as plt
 import cupy as cp
 
 
-def laplacian(in_field, lap_field, num_halo, extend=0):
-    """ Compute the Laplacian using 2nd-order centered differences.
-
-    Parameters
-    ----------
-    in_field : array-like
-        Input field (nz x ny x nx with halo in x- and y-direction).
-    lap_field : array-like
-        Result (must be same size as ``in_field``).
-    num_halo : int
-        Number of halo points.
-    extend : `int`, optional
-        Extend computation into halo-zone by this number of points.
-    """
-    ib = num_halo - extend
-    ie = -num_halo + extend
-    jb = num_halo - extend
-    je = -num_halo + extend
-
-    lap_field[:, jb:je, ib:ie] = (
-        -4.0 * in_field[:, jb:je, ib:ie]
-        + in_field[:, jb:je, ib - 1 : ie - 1]
-        + in_field[:, jb:je, ib + 1 : ie + 1 if ie != -1 else None]
-        + in_field[:, jb - 1 : je - 1, ib:ie]
-        + in_field[:, jb + 1 : je + 1 if je != -1 else None, ib:ie])
-
-
 def halo_update(field, num_halo):
     """ Update the halo-zone using an up/down and left/right strategy.
 
@@ -66,41 +39,50 @@ def halo_update(field, num_halo):
     field[:, :, -num_halo:] = field[:, :, num_halo:2*num_halo]
 
 
-def apply_diffusion(in_field, out_field, alpha, num_halo, num_iter=1):
+def apply_diffusion(field, alpha, num_halo, num_iter=1):
     """ Integrate 4th-order diffusion equation by a certain number of iterations.
 
     Parameters
     ----------
-    in_field : array-like
-        Input field (nz x ny x nx with halo in x- and y-direction).
-    lap_field : array-like
-        Result (must be same size as ``in_field``).
+    field : array-like
+        Input/output field (nz x ny x nx with halo in x- and y-direction).
     alpha : float
         Diffusion coefficient (dimensionless).
     num_iter : `int`, optional
         Number of iterations to execute.
     """
-    # Intermediate field:
-    tmp_field = cp.empty_like(in_field)
+    lap = cp.empty_like(field)
 
     for n in range(num_iter):
         # Halo update:
-        halo_update(in_field, num_halo)
+        halo_update(field, num_halo)
 
         # Run the stencil:
-        laplacian(in_field, tmp_field, num_halo=num_halo, extend=1)
-        laplacian(tmp_field, out_field, num_halo=num_halo, extend=0)
+        imin = num_halo - 1
+        imax = -num_halo + 1
+        jmin = num_halo - 1
+        jmax = -num_halo + 1
 
-        out_field[:, num_halo:-num_halo, num_halo:-num_halo] = (
-            in_field[:, num_halo:-num_halo, num_halo:-num_halo]
-            - alpha * out_field[:, num_halo:-num_halo, num_halo:-num_halo])
+        lap[:, jmin:jmax, imin:imax] = (
+             -4 * field[:, jmin:jmax, imin:imax]
+                + field[:, jmin:jmax, imin-1:imax-1]
+                + field[:, jmin:jmax, imin+1:imax+1]
+                + field[:, jmin-1:jmax-1, imin:imax]
+                + field[:, jmin+1:jmax+1, imin:imax])
 
-        if n < num_iter - 1:
-            # Swap input and output fields:
-            in_field, out_field = out_field, in_field
-        else:
-            # Halo update:
-            halo_update(out_field, num_halo)
+        imin = num_halo
+        imax = -num_halo
+        jmin = num_halo
+        jmax = -num_halo
+
+        field[:, jmin:jmax, imin:imax] -= alpha * (
+             -4 * lap[:, jmin:jmax, imin:imax]
+                + lap[:, jmin:jmax, imin-1:imax-1]
+                + lap[:, jmin:jmax, imin+1:imax+1]
+                + lap[:, jmin-1:jmax-1, imin:imax]
+                + lap[:, jmin+1:jmax+1, imin:imax])
+
+    halo_update(field, num_halo)
 
 
 @click.command()
@@ -108,7 +90,7 @@ def apply_diffusion(in_field, out_field, alpha, num_halo, num_iter=1):
 @click.option('--ny', type=int, required=True, help='Number of gridpoints in y-direction')
 @click.option('--nz', type=int, required=True, help='Number of gridpoints in z-direction')
 @click.option('--num_iter', type=int, required=True, help='Number of iterations')
-@click.option('--num_halo', type=int, default=2, help='Number of halo-pointers in x- and y-direction')
+@click.option('--num_halo', type=int, default=3, help='Number of halo-pointers in x- and y-direction')
 @click.option('--plot_result', type=bool, default=False, help='Make a plot of the result?')
 
 def main(nx, ny, nz, num_iter, num_halo=3, plot_result=False):
@@ -127,7 +109,7 @@ def main(nx, ny, nz, num_iter, num_halo=3, plot_result=False):
     ysize = ny + 2 * num_halo
     zsize = nz
 
-    in_field_np = np.zeros((zsize, ysize, xsize))
+    field_np = np.zeros((zsize, ysize, xsize))
 
     # Prepare input field:
     imin = int(0.25 * xsize + 0.5)
@@ -135,15 +117,15 @@ def main(nx, ny, nz, num_iter, num_halo=3, plot_result=False):
     jmin = int(0.25 * ysize + 0.5)
     jmax = int(0.75 * ysize + 0.5)
 
-    in_field_np[:, jmin:jmax+1, imin:imax+1] = 1
+    field_np[:, jmin:jmax+1, imin:imax+1] = 1
 
     # Write input field to file:
-    np.save('in_field', in_field_np)
+    np.save('in_field', field_np)
 
     if plot_result:
         # Plot initial field:
         plt.ioff()
-        plt.imshow(in_field_np[in_field_np.shape[0] // 2, :, :], origin='lower')
+        plt.imshow(field_np[field_np.shape[0] // 2, :, :], origin='lower')
         plt.colorbar()
         plt.savefig('in_field.png')
         plt.close()
@@ -151,23 +133,22 @@ def main(nx, ny, nz, num_iter, num_halo=3, plot_result=False):
     # Timed region:
     tic = time.time()
 
-    in_field = cp.array(in_field_np)
-    out_field = cp.empty_like(in_field)
+    field = cp.array(field_np)
 
-    apply_diffusion(in_field, out_field, alpha, num_halo, num_iter=num_iter)
+    apply_diffusion(field, alpha, num_halo, num_iter=num_iter)
 
-    out_field_np = out_field.get()
+    field_np = field.get()
 
     toc = time.time()
     print(f'Elapsed time for work = {toc - tic}s.')
 
     # Save output field:
-    np.save('out_field', out_field_np)
+    np.save('out_field', field_np)
 
     if plot_result:
         # Plot output field:
         plt.ioff()
-        plt.imshow(out_field_np[out_field_np.shape[0] // 2, :, :], origin='lower')
+        plt.imshow(field_np[field_np.shape[0] // 2, :, :], origin='lower')
         plt.colorbar()
         plt.savefig('out_field.png')
         plt.close()
