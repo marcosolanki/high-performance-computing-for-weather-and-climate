@@ -132,7 +132,17 @@ int templated_main(int argc, char const **argv) {
 
         std::cout << "================================================================================\n";
         std::cout << "                             Welcome to stencil2d!\n";
-        std::cout << "Version    :: C++ with OpenACC\n";
+        std::cout << "Version    :: C++ with OpenACC";
+        #ifdef _OPENACC
+        {
+            std::stringstream acc_ss;
+            acc_ss << _OPENACC;
+            const std::string acc = acc_ss.str();
+            if(acc.size() == 6) std::cout << " v" << acc.substr(0, 4) << '.' << acc.substr(4, 2) << '\n';
+        }
+        #else
+        std::cout << " (disabled)\n";
+        #endif
         std::cout << "Interior   :: (" << x << ", " << y << ", " << z << ")\n";
         std::cout << "Boundaries :: (" << bdry << ", " << bdry << ", " << 0 << ")\n";
         std::cout << "Iterations :: " << itrs << '\n';
