@@ -116,19 +116,18 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 // Output:  return (...)    :: Exit code (EXIT_SUCCESS or EXIT_FAILURE)
 template<typename T>
 int templated_main(int argc, char const **argv) {
-    constexpr std::size_t bdry = 2;
 
-    if(argc == 6) {
-        std::size_t x, y, z, itrs;
+    if(argc == 7) {
+        std::size_t x, y, z, bdry, itrs;
         Mode mode;
 
         {
-            std::istringstream x_ss(argv[1]), y_ss(argv[2]), z_ss(argv[3]), itrs_ss(argv[4]);
-            x_ss >> x; y_ss >> y; z_ss >> z; itrs_ss >> itrs;
-            mode = utils::mode_from_string(argv[5]);
+            std::istringstream x_ss(argv[1]), y_ss(argv[2]), z_ss(argv[3]), bdry_ss(argv[4]), itrs_ss(argv[5]);
+            x_ss >> x; y_ss >> y; z_ss >> z; bdry_ss >> bdry; itrs_ss >> itrs;
+            mode = utils::mode_from_string(argv[6]);
 
             if(x_ss.fail() || y_ss.fail() || z_ss.fail() || itrs_ss.fail() ||
-               x == 0 || y == 0 || z == 0 || itrs == 0 || mode == Mode::invalid) {
+               x == 0 || y == 0 || z == 0 || bdry < 2 || itrs == 0 || mode == Mode::invalid) {
 
                 utils::print_args_errmsg();
                 return EXIT_FAILURE;
