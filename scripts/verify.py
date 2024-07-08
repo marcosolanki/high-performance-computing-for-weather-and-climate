@@ -84,7 +84,6 @@ def verify(prefix1, prefix2):
 
 
 if __name__ == '__main__':
-    print('NOTE: Script should be called from the root directory.')
     if len(sys.argv) == 3:
         verify(sys.argv[1], sys.argv[2])
     else:

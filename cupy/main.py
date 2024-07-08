@@ -66,9 +66,9 @@ def apply_diffusion(field, alpha, num_halo, num_iter=1):
         lap[:, jmin:jmax, imin:imax] = (
              -4 * field[:, jmin:jmax, imin:imax]
                 + field[:, jmin:jmax, imin-1:imax-1]
-                + field[:, jmin:jmax, imin+1:imax+1]
+                + field[:, jmin:jmax, imin+1:imax+1 if imax != -1 else None]
                 + field[:, jmin-1:jmax-1, imin:imax]
-                + field[:, jmin+1:jmax+1, imin:imax])
+                + field[:, jmin+1:jmax+1 if jmax != -1 else None, imin:imax])
 
         imin = num_halo
         imax = -num_halo
@@ -90,10 +90,10 @@ def apply_diffusion(field, alpha, num_halo, num_iter=1):
 @click.option('--ny', type=int, required=True, help='Number of gridpoints in y-direction')
 @click.option('--nz', type=int, required=True, help='Number of gridpoints in z-direction')
 @click.option('--num_iter', type=int, required=True, help='Number of iterations')
-@click.option('--num_halo', type=int, default=3, help='Number of halo-pointers in x- and y-direction')
+@click.option('--num_halo', type=int, default=2, help='Number of halo-pointers in x- and y-direction')
 @click.option('--plot_result', type=bool, default=False, help='Make a plot of the result?')
 
-def main(nx, ny, nz, num_iter, num_halo=3, plot_result=False):
+def main(nx, ny, nz, num_iter, num_halo=2, plot_result=False):
     """Driver for apply_diffusion that sets up fields and does timings"""
 
     assert 0 < nx <= 1024 * 1024, 'You have to specify a reasonable value for nx'

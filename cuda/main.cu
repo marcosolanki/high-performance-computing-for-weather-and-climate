@@ -116,7 +116,7 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 // Output:  return (...)    :: Exit code (EXIT_SUCCESS or EXIT_FAILURE)
 template<typename T>
 int templated_main(int argc, char const **argv) {
-    constexpr std::size_t bdry = 3;
+    constexpr std::size_t bdry = 2;
 
     if(argc == 6) {
         std::size_t x, y, z, itrs;
