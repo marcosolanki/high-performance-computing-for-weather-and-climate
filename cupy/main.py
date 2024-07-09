@@ -69,9 +69,8 @@ def apply_diffusion(u, alpha, bdry, itrs):
 @click.option('-nz', type=int, required=True, help='Number of gridpoints in z-direction')
 @click.option('-itrs', type=int, required=True, help='Number of iterations')
 @click.option('-bdry', type=int, default=2, help='Number of boundary points in x- and y-direction')
-@click.option('-plot', type=bool, default=False, help='Make a plot of the result?')
 
-def main(nx, ny, nz, itrs, bdry, plot):
+def main(nx, ny, nz, itrs, bdry):
     """Driver for apply_diffusion that sets up fields and does timings"""
 
     assert 0 < nx <= 1024 * 1024, 'You have to specify a reasonable value for nx'
@@ -100,14 +99,6 @@ def main(nx, ny, nz, itrs, bdry, plot):
     # Write input field to file:
     np.save('in_field', u_host)
 
-    if plot:
-        # Plot initial field:
-        plt.ioff()
-        plt.imshow(u_host[u_host.shape[0] // 2, :, :], origin='lower')
-        plt.colorbar()
-        plt.savefig('in_field.png')
-        plt.close()
-
     # Timed region:
     tic = time.time()
 
@@ -122,14 +113,6 @@ def main(nx, ny, nz, itrs, bdry, plot):
 
     # Save output field:
     np.save('out_field', u_host)
-
-    if plot:
-        # Plot output field:
-        plt.ioff()
-        plt.imshow(u_host[u_host.shape[0] // 2, :, :], origin='lower')
-        plt.colorbar()
-        plt.savefig('out_field.png')
-        plt.close()
 
 
 if __name__ == '__main__':

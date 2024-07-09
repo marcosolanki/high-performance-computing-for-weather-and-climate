@@ -52,3 +52,21 @@ Run, e.g., with: `python xyz-laplap.py -nx 128 -ny 128 -nz 64 -bdry 2 -itrs 1024
 Make sure you have the `HPC4WC_kernel` IPython kernel from the [HPC4WC setup script](https://github.com/ofuhrer/HPC4WC/blob/main/setup/HPC4WC_setup.sh) installed.\
 Open `run.ipynb` via the [CSCS JupyterHub](https://jupyter.cscs.ch).\
 Run a cell such as: `!python xyz-laplap.py -nx 128 -ny 128 -nz 64 -bdry 2 -itrs 1024 -bknd cuda`.
+
+
+# Testing and verification
+
+## plot.py
+The script `scripts/plot.py` plots the input and output fields using the `in_field.npy`/`in_field.csv` and `out_field.npy`/`out_field.csv` files located within the directory from which it is called. These `*.npy`/`*.csv` files are automatically generated when running any of the provided backends (`cuda`/`openacc`/`cupy`/`gt4py`). A possible workflow would, therefore, be:
+```
+cd cuda/ && make && ./main 128 128 64 2 1024 laplap-global
+python ../scripts/plot.py
+```
+
+## verify.py
+The script `scripts/verify.py` compares the `in_field.npy`/`in_field.csv` and `out_field.npy`/`out_field.csv` files produced by two different backends. It computes the error between them, plots this error, and computes its $L^1$, $L^2$ and $L^\infty$ norms. A possible workflow would, therefore, be:
+```
+cd cuda/ && make && ./main 128 128 64 2 1024 laplap-global && cd ../
+cd openacc/ && make && ./main 128 128 64 2 1024 parallel && cd ../
+python scripts/verify.py cuda openacc
+```

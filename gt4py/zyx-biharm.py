@@ -104,9 +104,8 @@ def apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs):
 @click.option('-itrs', type=int, required=True, help='Number of iterations')
 @click.option('-bdry', type=int, default=2, help='Number of boundary points in x- and y-direction')
 @click.option('-bknd', type=str, required=False, default='numpy', help='GT4Py backend')
-@click.option('-plot', type=bool, default=False, help='Make a plot of the result?')
 
-def main(nx, ny, nz, itrs, bdry, bknd, plot):
+def main(nx, ny, nz, itrs, bdry, bknd):
     """Driver for apply_diffusion that sets up fields and does timings."""
 
     assert 0 < nx <= 1024 * 1024, 'You have to specify a reasonable value for nx'
@@ -134,14 +133,6 @@ def main(nx, ny, nz, itrs, bdry, bknd, plot):
     
     # Write input field to file:
     np.save('in_field', u_host)
-
-    if plot:
-        # Plot initial field:
-        plt.ioff()
-        plt.imshow(u_host[0, :, :], origin='lower')
-        plt.colorbar()
-        plt.savefig('in_field.png')
-        plt.close()
     
     # Compile diffusion stencil:
     diffusion_stencil = gtscript.stencil(
@@ -172,14 +163,6 @@ def main(nx, ny, nz, itrs, bdry, bknd, plot):
 
     # Save output field:
     np.save('out_field', u_host)
-
-    if plot:
-        # Plot output field:
-        plt.ioff()
-        plt.imshow(u_host[0, :, :], origin='lower')
-        plt.colorbar()
-        plt.savefig('out_field.png')
-        plt.close()
 
 
 if __name__ == '__main__':

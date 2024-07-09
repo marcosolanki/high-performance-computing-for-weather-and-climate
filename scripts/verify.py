@@ -54,13 +54,13 @@ def verify(prefix1, prefix2):
 
     im1 = axs[0].imshow(in_res[in_res.shape[0] // 2, :, :], origin='lower')
     fig.colorbar(im1, ax=axs[0])
-    axs[0].set_title('Residual (Initial condition)')
+    axs[0].set_title('Error (Initial condition)')
 
     im2 = axs[1].imshow(out_res[out_res.shape[0] // 2, :, :], origin='lower')
     fig.colorbar(im2, ax=axs[1])
-    axs[1].set_title('Residual (Final result)')
+    axs[1].set_title('Error (Final result)')
 
-    plt.savefig(f'residuals_{prefix1}_{prefix2}.png', bbox_inches='tight')
+    plt.savefig(f'error_{prefix1}_{prefix2}.png', bbox_inches='tight')
 
     in_res = in_res.reshape(-1)
     out_res = out_res.reshape(-1)
