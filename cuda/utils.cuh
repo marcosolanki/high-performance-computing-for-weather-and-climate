@@ -43,7 +43,7 @@ void print_args_errmsg() {
     std::cerr << " nx  :: Amount of (interior) points in x-direction. Must be >0.\n";
     std::cerr << " ny  :: Amount of (interior) points in y-direction. Must be >0.\n";
     std::cerr << " nz  :: Amount of (interior) points in z-direction. Must be >0.\n";
-    std::cerr << "bdry :: Boundary/halo width/size. Must be >1.\n";
+    std::cerr << "bdry :: Boundary width. Must be >1.\n";
     std::cerr << "itrs :: Number of diffusive timesteps to perform. Must be >0.\n";
     std::cerr << "mode :: Computation mode. Must be \"laplap-{global/shared}\", or \"biharm-global\".\n";
     std::cerr << "================================================================================\n";

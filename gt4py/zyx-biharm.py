@@ -45,84 +45,84 @@ def diffusion_defs(
             + a1 * in_field[0, 2, 0])
 
 
-def update_halo(field, num_halo):
+def boundary_update(u, bdry):
 
-    # Bottom edge (without corners):
-    field[:, :num_halo, num_halo:-num_halo] = field[:, -2*num_halo:-num_halo, num_halo:-num_halo]
+    # South boundary (without corners):
+    u[:, :bdry, bdry:-bdry] = u[:, -2*bdry:-bdry, bdry:-bdry]
 
-    # Top edge (without corners):
-    field[:, -num_halo:, num_halo:-num_halo] = field[:, num_halo:2*num_halo, num_halo:-num_halo]
+    # North boundary (without corners):
+    u[:, -bdry:, bdry:-bdry] = u[:, bdry:2*bdry, bdry:-bdry]
 
-    # Left edge (including corners):
-    field[:, :, :num_halo] = field[:, :, -2*num_halo:-num_halo]
+    # West boundary (including corners):
+    u[:, :, :bdry] = u[:, :, -2*bdry:-bdry]
 
-    # Right edge (including corners):
-    field[:, :, -num_halo:] = field[:, :, num_halo:2*num_halo]
+    # East boundary (including corners):
+    u[:, :, -bdry:] = u[:, :, bdry:2*bdry]
 
 
-def apply_diffusion(diffusion_stencil, in_field, out_field, alpha, num_halo, num_iter=1):
+def apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs):
     
     # Origin and extent of the computational domain:
-    origin = (0, num_halo, num_halo)
-    domain = (in_field.shape[0], in_field.shape[1] - 2 * num_halo, in_field.shape[2] - 2 * num_halo)
+    origin = (0, bdry, bdry)
+    domain = (u.shape[0], u.shape[1]-2*bdry, u.shape[2]-2*bdry)
 
-    for n in range(num_iter // 2):
-        # Halo update:
-        update_halo(in_field, num_halo)
-
-        # Run the stencil:
-        diffusion_stencil(in_field=in_field, out_field=out_field, a1=-alpha, a2=-2*alpha, a8=8*alpha, a20=1-20*alpha, origin=origin, domain=domain)
-
-        # Halo update:
-        update_halo(out_field, num_halo)
+    for n in range(itrs // 2):
+        # Boundary update:
+        boundary_update(u, bdry)
 
         # Run the stencil:
-        diffusion_stencil(in_field=out_field, out_field=in_field, a1=-alpha, a2=-2*alpha, a8=8*alpha, a20=1-20*alpha, origin=origin, domain=domain)
+        diffusion_stencil(in_field=u, out_field=v, a1=-alpha, a2=-2*alpha, a8=8*alpha, a20=1-20*alpha, origin=origin, domain=domain)
 
-    # Halo update:
-    update_halo(in_field, num_halo)
+        # Boundary update:
+        boundary_update(v, bdry)
 
-    if num_iter % 2 == 1:
         # Run the stencil:
-        diffusion_stencil(in_field=in_field, out_field=out_field, a1=-alpha, a2=-2*alpha, a8=8*alpha, a20=1-20*alpha, origin=origin, domain=domain)
+        diffusion_stencil(in_field=v, out_field=u, a1=-alpha, a2=-2*alpha, a8=8*alpha, a20=1-20*alpha, origin=origin, domain=domain)
 
-        # Halo update:
-        update_halo(out_field, num_halo)
+    # Boundary update:
+    boundary_update(u, bdry)
+
+    if itrs % 2 == 1:
+        # Run the stencil:
+        diffusion_stencil(in_field=u, out_field=v, a1=-alpha, a2=-2*alpha, a8=8*alpha, a20=1-20*alpha, origin=origin, domain=domain)
+
+        # Boundary update:
+        boundary_update(v, bdry)
 
         # Right edge update (for some reason necessary to make results match with CuPy):
-        out_field[:, :, -num_halo:] = out_field[:, :, num_halo:2*num_halo]
+        v[:, :, -bdry:] = v[:, :, bdry:2*bdry]
 
     else:
         # Right edge update (for some reason necessary to make results match with CuPy):
-        in_field[:, :, -num_halo:] = in_field[:, :, num_halo:2*num_halo]
+        u[:, :, -bdry:] = u[:, :, bdry:2*bdry]
 
 
 @click.command()
-@click.option('--nx', type=int, required=True, help='Number of gridpoints in x-direction')
-@click.option('--ny', type=int, required=True, help='Number of gridpoints in y-direction')
-@click.option('--nz', type=int, required=True, help='Number of gridpoints in z-direction')
-@click.option('--num_iter', type=int, required=True, help='Number of iterations')
-@click.option('--num_halo', type=int, default=2, help='Number of halo-points in x- and y-direction')
-@click.option('--backend', type=str, required=False, default='numpy', help='GT4Py backend')
-@click.option('--plot_result', type=bool, default=False, help='Make a plot of the result?')
+@click.option('-nx', type=int, required=True, help='Number of gridpoints in x-direction')
+@click.option('-ny', type=int, required=True, help='Number of gridpoints in y-direction')
+@click.option('-nz', type=int, required=True, help='Number of gridpoints in z-direction')
+@click.option('-itrs', type=int, required=True, help='Number of iterations')
+@click.option('-bdry', type=int, default=2, help='Number of boundary points in x- and y-direction')
+@click.option('-bknd', type=str, required=False, default='numpy', help='GT4Py backend')
+@click.option('-plot', type=bool, default=False, help='Make a plot of the result?')
 
-def main(nx, ny, nz, num_iter, num_halo=2, backend='numpy', plot_result=False):
+def main(nx, ny, nz, itrs, bdry, bknd, plot):
     """Driver for apply_diffusion that sets up fields and does timings."""
 
     assert 0 < nx <= 1024 * 1024, 'You have to specify a reasonable value for nx'
     assert 0 < ny <= 1024 * 1024, 'You have to specify a reasonable value for ny'
     assert 0 < nz <= 1024, 'You have to specify a reasonable value for nz'
-    assert 0 < num_iter <= 1024 * 1024, 'You have to specify a reasonable value for num_iter'
-    assert 2 <= num_halo <= 256, 'You have to specify a reasonable number of halo points'
+    assert 0 < itrs <= 1024 * 1024, 'You have to specify a reasonable value for itrs'
+    assert 2 <= bdry <= 256, 'You have to specify a reasonable number of boundary points'
     
     alpha = 1 / 32
 
     # Allocate input field:
-    xsize = nx + 2 * num_halo
-    ysize = ny + 2 * num_halo
+    xsize = nx + 2 * bdry
+    ysize = ny + 2 * bdry
     zsize = nz
 
-    in_field_np = np.zeros((zsize, ysize, xsize), dtype=float)
+    u_host = np.zeros((zsize, ysize, xsize), dtype=float)
 
     # Prepare input field:
     imin = int(0.25 * xsize + 0.5)
@@ -130,15 +130,15 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend='numpy', plot_result=False):
     jmin = int(0.25 * ysize + 0.5)
     jmax = int(0.75 * ysize + 0.5)
 
-    in_field_np[:, jmin:jmax+1, imin:imax+1] = 1
+    u_host[:, jmin:jmax+1, imin:imax+1] = 1
     
     # Write input field to file:
-    np.save('in_field', in_field_np)
+    np.save('in_field', u_host)
 
-    if plot_result:
+    if plot:
         # Plot initial field:
         plt.ioff()
-        plt.imshow(in_field_np[0, :, :], origin='lower')
+        plt.imshow(u_host[0, :, :], origin='lower')
         plt.colorbar()
         plt.savefig('in_field.png')
         plt.close()
@@ -146,37 +146,37 @@ def main(nx, ny, nz, num_iter, num_halo=2, backend='numpy', plot_result=False):
     # Compile diffusion stencil:
     diffusion_stencil = gtscript.stencil(
         definition=diffusion_defs,
-        backend=backend,
+        backend=bknd,
         rebuild=False)
     
     # Timed region:
     tic = time.time()
     
     if legacy_api:
-        in_field = gt.storage.from_array(backend=backend, default_origin=(num_halo, num_halo, 0), data=in_field_np)
-        out_field = gt.storage.empty(backend=backend, default_origin=(num_halo, num_halo, 0),
-                                     shape=(nz, ny+2*num_halo, nx+2*num_halo), dtype=float)
+        u = gt.storage.from_array(backend=bknd, default_origin=(bdry, bdry, 0), data=u_host)
+        v = gt.storage.empty(backend=bknd, default_origin=(bdry, bdry, 0),
+                             shape=(nz, ny+2*bdry, nx+2*bdry), dtype=float)
     else:
-        in_field = gt.storage.from_array(backend=backend, data=in_field_np)
-        out_field = gt.storage.empty(backend=backend, shape=(nz, ny+2*num_halo, nx+2*num_halo), dtype=float)
+        u = gt.storage.from_array(backend=bknd, data=u_host)
+        v = gt.storage.empty(backend=bknd, shape=(nz, ny+2*bdry, nx+2*bdry), dtype=float)
 
-    apply_diffusion(diffusion_stencil, in_field, out_field, alpha, num_halo, num_iter=num_iter)
+    apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs)
     
     if legacy_api:
-        out_field_np = np.asarray(in_field if num_iter % 2 == 0 else out_field)
+        u_host = np.asarray(u if itrs % 2 == 0 else v)
     else:
-        out_field_np = (in_field if num_iter % 2 == 0 else out_field).get()
+        u_host = (u if itrs % 2 == 0 else v).get()
     
     toc = time.time()
     print(f'Elapsed time for work = {toc - tic}s.')
 
     # Save output field:
-    np.save('out_field', out_field_np)
+    np.save('out_field', u_host)
 
-    if plot_result:
+    if plot:
         # Plot output field:
         plt.ioff()
-        plt.imshow(out_field[0, :, :], origin='lower')
+        plt.imshow(u_host[0, :, :], origin='lower')
         plt.colorbar()
         plt.savefig('out_field.png')
         plt.close()

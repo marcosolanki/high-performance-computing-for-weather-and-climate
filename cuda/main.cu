@@ -18,7 +18,7 @@ using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 //
 // Input:   xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
 //          itrs                :: Number of timestep iterations
-//          bdry                :: Number of boundary points (halo size)
+//          bdry                :: Number of boundary points
 //          mode                :: Computation mode (double-5/13-point stencil(s) with/without shared memory)
 //          T                   :: Numeric real type
 // Output:  return (...)        :: Measured time (memory transfer + device allocation + computation) in seconds
@@ -118,16 +118,16 @@ template<typename T>
 int templated_main(int argc, char const **argv) {
 
     if(argc == 7) {
-        std::size_t x, y, z, bdry, itrs;
+        std::size_t nx, ny, nz, bdry, itrs;
         Mode mode;
 
         {
-            std::istringstream x_ss(argv[1]), y_ss(argv[2]), z_ss(argv[3]), bdry_ss(argv[4]), itrs_ss(argv[5]);
-            x_ss >> x; y_ss >> y; z_ss >> z; bdry_ss >> bdry; itrs_ss >> itrs;
+            std::istringstream nx_ss(argv[1]), ny_ss(argv[2]), nz_ss(argv[3]), bdry_ss(argv[4]), itrs_ss(argv[5]);
+            nx_ss >> nx; ny_ss >> ny; nz_ss >> nz; bdry_ss >> bdry; itrs_ss >> itrs;
             mode = utils::mode_from_string(argv[6]);
 
-            if(x_ss.fail() || y_ss.fail() || z_ss.fail() || itrs_ss.fail() ||
-               x == 0 || y == 0 || z == 0 || bdry < 2 || itrs == 0 || mode == Mode::invalid) {
+            if(nx_ss.fail() || ny_ss.fail() || nz_ss.fail() || itrs_ss.fail() ||
+               nx == 0 || ny == 0 || nz == 0 || bdry < 2 || itrs == 0 || mode == Mode::invalid) {
 
                 utils::print_args_errmsg();
                 return EXIT_FAILURE;
@@ -137,14 +137,14 @@ int templated_main(int argc, char const **argv) {
         std::cout << "================================================================================\n";
         std::cout << "                             Welcome to stencil2d!\n";
         std::cout << "Version    :: C++ with CUDA v" << CUDART_VERSION / 1000 << '.' << CUDART_VERSION / 10 % 100 << '\n';
-        std::cout << "Interior   :: (" << x << ", " << y << ", " << z << ")\n";
+        std::cout << "Interior   :: (" << nx << ", " << ny << ", " << nz << ")\n";
         std::cout << "Boundaries :: (" << bdry << ", " << bdry << ", " << 0 << ")\n";
         std::cout << "Iterations :: " << itrs << '\n';
         std::cout << "Real size  :: " << sizeof(T) << '\n';
         std::cout << "Exec. mode :: " << utils::get_mode_desc(mode) << '\n';
         std::cout << "================================================================================\n";
 
-        const double time = run_simulation<T>(x + 2 * bdry, y + 2 * bdry, z, itrs, bdry, mode);
+        const double time = run_simulation<T>(nx + 2 * bdry, ny + 2 * bdry, nz, itrs, bdry, mode);
 
         std::cout << "Runtime    :: " << time << "s\n";
         std::cout << "================================================================================\n";
