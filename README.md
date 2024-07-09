@@ -1,3 +1,10 @@
+# High-level, mid-level and low-level GPU programming comparison
+
+_**Task:** Implement a CUDA and OpenACC version of stencil2d. Validate your results. Compare performance against the CuPy and GT4Py versions of the code for a single GPU socket for different domain sizes. If time permits, analyse and optimise the performance of the implementations._
+
+The latest versions of the here-featured codes can always be retrieved from [this project's GitHub page](https://github.com/marcosolanki/high-performance-computing-for-weather-and-climate).
+
+
 # Building and running instructions
 
 ## CUDA
