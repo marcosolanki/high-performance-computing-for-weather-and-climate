@@ -8,7 +8,6 @@
 import time
 import click
 import numpy as np
-import matplotlib.pyplot as plt
 import gt4py as gt
 
 try:
@@ -58,12 +57,12 @@ def boundary_update(u, bdry):
 
 
 def apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs):
-    
+
     # Origin and extent of the computational domain:
     origin = (bdry, bdry, 0)
     domain = (u.shape[0]-2*bdry, u.shape[1]-2*bdry, u.shape[2])
 
-    for n in range(itrs // 2):
+    for _ in range(itrs // 2):
         # Boundary update:
         boundary_update(u, bdry)
 
@@ -102,7 +101,7 @@ def apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs):
 @click.option('-bdry', type=int, default=2, help='Number of boundary points in x- and y-direction')
 @click.option('-bknd', type=str, required=False, default='numpy', help='GT4Py backend')
 
-def main(nx, ny, nz, itrs, bdry, bknd):
+def main(nx=128, ny=128, nz=64, itrs=1024, bdry=2, bknd='numpy'):
     """Driver for apply_diffusion that sets up fields and does timings."""
 
     assert 0 < nx <= 1024 * 1024, 'You have to specify a reasonable value for nx'
@@ -110,7 +109,7 @@ def main(nx, ny, nz, itrs, bdry, bknd):
     assert 0 < nz <= 1024, 'You have to specify a reasonable value for nz'
     assert 0 < itrs <= 1024 * 1024, 'You have to specify a reasonable value for itrs'
     assert 2 <= bdry <= 256, 'You have to specify a reasonable number of boundary points'
-    
+
     alpha = 1 / 32
 
     # Allocate input field:
@@ -127,19 +126,19 @@ def main(nx, ny, nz, itrs, bdry, bknd):
     jmax = int(0.75 * ysize + 0.5)
 
     u_host[imin:imax+1, jmin:jmax+1, :] = 1
-    
+
     # Write input field to file:
     np.save('in_field', np.swapaxes(u_host, 0, 2))
-    
+
     # Compile diffusion stencil:
     diffusion_stencil = gtscript.stencil(
         definition=diffusion_defs,
         backend=bknd,
         rebuild=False)
-    
+
     # Timed region:
     tic = time.time()
-    
+
     if legacy_api:
         u = gt.storage.from_array(backend=bknd, default_origin=(bdry, bdry, 0), data=u_host)
         v = gt.storage.empty(backend=bknd, default_origin=(bdry, bdry, 0),
@@ -149,12 +148,12 @@ def main(nx, ny, nz, itrs, bdry, bknd):
         v = gt.storage.empty(backend=bknd, shape=(nx+2*bdry, ny+2*bdry, nz), dtype=float)
 
     apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs)
-    
+
     if legacy_api:
         u_host = np.asarray(u if itrs % 2 == 0 else v)
     else:
         u_host = (u if itrs % 2 == 0 else v).get()
-    
+
     toc = time.time()
     print(f'Elapsed time for work = {toc - tic}s.')
 

@@ -8,7 +8,6 @@
 import time
 import click
 import numpy as np
-import matplotlib.pyplot as plt
 import cupy as cp
 
 
@@ -31,7 +30,7 @@ def apply_diffusion(u, alpha, bdry, itrs):
 
     lap = cp.empty_like(u)
 
-    for n in range(itrs):
+    for _ in range(itrs):
         # Boundary update:
         boundary_update(u, bdry)
 
@@ -70,7 +69,7 @@ def apply_diffusion(u, alpha, bdry, itrs):
 @click.option('-itrs', type=int, required=True, help='Number of iterations')
 @click.option('-bdry', type=int, default=2, help='Number of boundary points in x- and y-direction')
 
-def main(nx, ny, nz, itrs, bdry):
+def main(nx=128, ny=128, nz=64, itrs=1024, bdry=2):
     """Driver for apply_diffusion that sets up fields and does timings"""
 
     assert 0 < nx <= 1024 * 1024, 'You have to specify a reasonable value for nx'
