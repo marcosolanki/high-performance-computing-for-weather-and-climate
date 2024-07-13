@@ -108,7 +108,7 @@ def main(nx=128, ny=128, nz=64, itrs=1024, bdry=2):
     u_host = u.get()
 
     toc = time.time()
-    print(f'Elapsed time for work = {toc - tic}s.')
+    print(f'Elapsed time for work = {toc-tic:.16f}s.')
 
     # Save output field:
     np.save('out_field', u_host)

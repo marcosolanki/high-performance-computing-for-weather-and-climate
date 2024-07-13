@@ -146,7 +146,7 @@ int templated_main(int argc, char const **argv) {
 
         const double time = run_simulation<T>(nx + 2 * bdry, ny + 2 * bdry, nz, itrs, bdry, mode);
 
-        std::cout << "Runtime    :: " << time << "s\n";
+        std::cout << "Runtime    :: " << std::fixed << std::setprecision(10) << time << "s\n";
         std::cout << "================================================================================\n";
     }
     else {
