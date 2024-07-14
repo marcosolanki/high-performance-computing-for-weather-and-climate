@@ -48,7 +48,6 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     check(cudaMallocAsync(&u, xsize * ysize * zsize * sizeof(T), stream));
     check(cudaMallocAsync(&v, xsize * ysize * zsize * sizeof(T), stream));
     #else
-    // Necessary for running on Piz Daint (as it only has CUDA v11.0 installed).
     check(cudaMalloc(&u, xsize * ysize * zsize * sizeof(T)));
     check(cudaMalloc(&v, xsize * ysize * zsize * sizeof(T)));
     #endif
@@ -88,7 +87,6 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
     check(cudaFreeAsync(u, stream));
     check(cudaFreeAsync(v, stream));
     #else
-    // Necessary for running on Piz Daint (as it only has CUDA v11.0 installed).
     check(cudaFree(u));
     check(cudaFree(v));
     #endif

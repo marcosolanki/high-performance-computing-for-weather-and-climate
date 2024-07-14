@@ -46,7 +46,7 @@ void update_boundaries(cudaStream_t &stream, T *u,
     // i in [0, xmin[
     // j in [ymin, ymax[
     // k in [0, zsize[
-    constexpr dim3 block_dim_west(3, 32, 1);
+    const dim3 block_dim_west(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
     const dim3 grid_dim_west((xmin + (block_dim_west.x - 1)) / block_dim_west.x,
                              (ysize + (block_dim_west.y - 1)) / block_dim_west.y,
                              (zsize + (block_dim_west.z - 1)) / block_dim_west.z);
@@ -55,7 +55,7 @@ void update_boundaries(cudaStream_t &stream, T *u,
     // i in [xmax, xsize[
     // j in [ymin, ymax[
     // k in [0, zsize[
-    constexpr dim3 block_dim_east(3, 32, 1);
+    const dim3 block_dim_east(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
     const dim3 grid_dim_east((xsize - xmax + (block_dim_east.x - 1)) / block_dim_east.x,
                              (ysize + (block_dim_east.y - 1)) / block_dim_east.y,
                              (zsize + (block_dim_east.z - 1)) / block_dim_east.z);
