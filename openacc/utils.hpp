@@ -3,6 +3,13 @@
 #include <iostream>
 
 
+#ifdef _OPENACC
+extern "C" {
+    extern void acc_set_error_routine(void (*)(char *));
+}
+#endif
+
+
 namespace {
 
 // Translates a 3D index to a 1D/linear index.
@@ -10,6 +17,17 @@ static inline std::size_t index(std::size_t i, std::size_t j, std::size_t k,
                                 std::size_t xsize, std::size_t ysize) {
     return i + j * xsize + k * xsize * ysize;
 }
+
+
+#ifdef _OPENACC
+// Called by the OpenACC runtime in case of an error.
+void error_routine(char *errmsg) {
+    std::cerr << "ERROR: An OpenACC error has occurred.\n"
+              << "Error message: \"" << errmsg << "\"\n";
+    std::cerr << "================================================================================\n";
+    exit(EXIT_FAILURE);
+}
+#endif
 
 } // namespace
 

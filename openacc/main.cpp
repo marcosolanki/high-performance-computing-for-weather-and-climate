@@ -113,6 +113,10 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
 template<typename T>
 int templated_main(int argc, char const **argv) {
 
+    #ifdef _OPENACC
+    acc_set_error_routine(&error_routine);
+    #endif
+
     if(argc == 7) {
         std::size_t nx, ny, nz, bdry, itrs;
         Mode mode;
