@@ -21,49 +21,47 @@ void update_boundaries(cudaStream_t &stream, T *u,
                        std::size_t ymin, std::size_t ymax,
                        std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
-    const std::size_t xint = xmax - xmin;
-    const std::size_t yint = ymax - ymin;
+    // Kernel pointers:
+    const void *update_south_kernel = reinterpret_cast<void*>(kernels::update_south<T>);
+    const void *update_north_kernel = reinterpret_cast<void*>(kernels::update_north<T>);
+    const void *update_west_kernel = reinterpret_cast<void*>(kernels::update_west<T>);
+    const void *update_east_kernel = reinterpret_cast<void*>(kernels::update_east<T>);
 
-    // Ranges:
-    // i in [xmin, xmax[
-    // j in [0, ymin[
-    // k in [0, zsize[
+    // Block dimensions:
     constexpr dim3 block_dim_south(64, 1, 1);
+    constexpr dim3 block_dim_north(64, 1, 1);
+    const dim3 block_dim_west(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
+    const dim3 block_dim_east(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
+
+    // Grid dimensions:
     const dim3 grid_dim_south((xmax - xmin + (block_dim_south.x - 1)) / block_dim_south.x,
                               (ymin + (block_dim_south.y - 1)) / block_dim_south.y,
                               (zsize + (block_dim_south.z - 1)) / block_dim_south.z);
-
-    // Ranges:
-    // i in [xmin, xmax[
-    // j in [ymax, ysize[
-    // k in [0, zsize[
-    constexpr dim3 block_dim_north(64, 1, 1);
     const dim3 grid_dim_north((xmax - xmin + (block_dim_north.x - 1)) / block_dim_north.x,
                               (ysize - ymax + (block_dim_north.y - 1)) / block_dim_north.y,
                               (zsize + (block_dim_north.z - 1)) / block_dim_north.z);
-
-    // Ranges:
-    // i in [0, xmin[
-    // j in [ymin, ymax[
-    // k in [0, zsize[
-    const dim3 block_dim_west(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
     const dim3 grid_dim_west((xmin + (block_dim_west.x - 1)) / block_dim_west.x,
                              (ysize + (block_dim_west.y - 1)) / block_dim_west.y,
                              (zsize + (block_dim_west.z - 1)) / block_dim_west.z);
-
-    // Ranges:
-    // i in [xmax, xsize[
-    // j in [ymin, ymax[
-    // k in [0, zsize[
-    const dim3 block_dim_east(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
     const dim3 grid_dim_east((xsize - xmax + (block_dim_east.x - 1)) / block_dim_east.x,
                              (ysize + (block_dim_east.y - 1)) / block_dim_east.y,
                              (zsize + (block_dim_east.z - 1)) / block_dim_east.z);
 
-    kernels::update_south<<<grid_dim_south, block_dim_south, 0, stream>>>(u, xmin, xmax, ymin, yint, xsize, ysize, zsize);
-    kernels::update_north<<<grid_dim_north, block_dim_north, 0, stream>>>(u, xmin, xmax, ymax, yint, xsize, ysize, zsize);
-    kernels::update_west<<<grid_dim_west, block_dim_west, 0, stream>>>(u, xmin, ymin, ymax, xint, xsize, ysize, zsize);
-    kernels::update_east<<<grid_dim_east, block_dim_east, 0, stream>>>(u, xmax, ymin, ymax, xint, xsize, ysize, zsize);
+    // Additional kernel arguments:
+    std::size_t xint = xmax - xmin;
+    std::size_t yint = ymax - ymin;
+
+    // Kernel argument arrays:
+    void *update_south_args[] = {&u, &xmin, &xmax, &ymin, &yint, &xsize, &ysize, &zsize};
+    void *update_north_args[] = {&u, &xmin, &xmax, &ymax, &yint, &xsize, &ysize, &zsize};
+    void *update_west_args[] = {&u, &xmin, &ymin, &ymax, &xint, &xsize, &ysize, &zsize};
+    void *update_east_args[] = {&u, &xmax, &ymin, &ymax, &xint, &xsize, &ysize, &zsize};
+
+    // Launch kernels:
+    check(cudaLaunchKernel(update_south_kernel, grid_dim_south, block_dim_south, update_south_args, 0, stream));
+    check(cudaLaunchKernel(update_north_kernel, grid_dim_north, block_dim_north, update_north_args, 0, stream));
+    check(cudaLaunchKernel(update_west_kernel, grid_dim_west, block_dim_west, update_west_args, 0, stream));
+    check(cudaLaunchKernel(update_east_kernel, grid_dim_east, block_dim_east, update_east_args, 0, stream));
 }
 
 
@@ -83,8 +81,14 @@ void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha,
                                       std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                       std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
+    // Kernel pointers:
+    const void *laplacian_kernel = reinterpret_cast<void*>(kernels::laplacian<T>);
+    const void *laplacian_update_kernel = reinterpret_cast<void*>(kernels::laplacian_update<T>);
+
+    // Block dimensions:
     constexpr dim3 block_dim(8, 8, 1);
 
+    // Grid dimensions:
     const dim3 grid_dim_lap((xmax - xmin + 2 + (block_dim.x - 1)) / block_dim.x,
                             (ymax - ymin + 2 + (block_dim.y - 1)) / block_dim.y,
                             (zsize + (block_dim.z - 1)) / block_dim.z);
@@ -92,8 +96,19 @@ void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha,
                             (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                             (zsize + (block_dim.z - 1)) / block_dim.z);
 
-    kernels::laplacian<<<grid_dim_lap, block_dim, 0, stream>>>(u, v, xmin - 1, xmax + 1, ymin - 1, ymax + 1, xsize, ysize, zsize);
-    kernels::laplacian_update<<<grid_dim_int, block_dim, 0, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+    // Additional kernel arguments:
+    std::size_t xmin_lap = xmin - 1;
+    std::size_t xmax_lap = xmax + 1;
+    std::size_t ymin_lap = ymin - 1;
+    std::size_t ymax_lap = ymax + 1;
+
+    // Kernel argument arrays:
+    void *laplacian_args[] = {&u, &v, &xmin_lap, &xmax_lap, &ymin_lap, &ymax_lap, &xsize, &ysize, &zsize};
+    void *laplacian_update_args[] = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+
+    // Launch kernels:
+    check(cudaLaunchKernel(laplacian_kernel, grid_dim_lap, block_dim, laplacian_args, 0, stream));
+    check(cudaLaunchKernel(laplacian_update_kernel, grid_dim_int, block_dim, laplacian_update_args, 0, stream));
 }
 
 
@@ -113,8 +128,14 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
                                              std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                              std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
+    // Kernel pointers:
+    const void *laplacian_shared_kernel = reinterpret_cast<void*>(kernels::laplacian_shared<T>);
+    const void *laplacian_shared_update_kernel = reinterpret_cast<void*>(kernels::laplacian_shared_update<T>);
+
+    // Block dimensions:
     constexpr dim3 block_dim(8, 8, 1);
 
+    // Grid dimensions:
     const dim3 grid_dim_lap((xmax - xmin + 2 + (block_dim.x - 1)) / block_dim.x,
                             (ymax - ymin + 2 + (block_dim.y - 1)) / block_dim.y,
                             (zsize + (block_dim.z - 1)) / block_dim.z);
@@ -122,10 +143,22 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
                             (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                             (zsize + (block_dim.z - 1)) / block_dim.z);
 
+    // Additional kernel arguments:
+    std::size_t xmin_lap = xmin - 1;
+    std::size_t xmax_lap = xmax + 1;
+    std::size_t ymin_lap = ymin - 1;
+    std::size_t ymax_lap = ymax + 1;
+
+    // Kernel argument arrays:
+    void *laplacian_shared_args[] = {&u, &v, &xmin_lap, &xmax_lap, &ymin_lap, &ymax_lap, &xsize, &ysize, &zsize};
+    void *laplacian_shared_update_args[] = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+
+    // Shared memory size:
     constexpr std::size_t shared_size = (block_dim.x + 2) * (block_dim.y + 2) * sizeof(T);
 
-    kernels::laplacian_shared<<<grid_dim_lap, block_dim, shared_size, stream>>>(u, v, xmin - 1, xmax + 1, ymin - 1, ymax + 1, xsize, ysize, zsize);
-    kernels::laplacian_shared_update<<<grid_dim_int, block_dim, shared_size, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+    // Launch kernels:
+    check(cudaLaunchKernel(laplacian_shared_kernel, grid_dim_lap, block_dim, laplacian_shared_args, shared_size, stream));
+    check(cudaLaunchKernel(laplacian_shared_update_kernel, grid_dim_int, block_dim, laplacian_shared_update_args, shared_size, stream));
 }
 
 
@@ -145,13 +178,25 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
                                 std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                 std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
+    // Kernel pointers:
+    const void *biharmonic_operator_kernel = reinterpret_cast<void*>(kernels::biharmonic_operator<T>);
+    const void *update_interior_kernel = reinterpret_cast<void*>(kernels::update_interior<T>);
+
+    // Block dimensions:
     constexpr dim3 block_dim(8, 8, 1);
+
+    // Grid dimensions:
     const dim3 grid_dim((xmax - xmin + (block_dim.x - 1)) / block_dim.x,
                         (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                         (zsize + (block_dim.z - 1)) / block_dim.z);
 
-    kernels::biharmonic_operator<<<grid_dim, block_dim, 0, stream>>>(u, v, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
-    kernels::update_interior<<<grid_dim, block_dim, 0, stream>>>(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+   // Kernel argument arrays:
+    void *biharmonic_operator_args[] = {&u, &v, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+    void *update_interior_args[] = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+
+    // Launch kernels:
+    check(cudaLaunchKernel(biharmonic_operator_kernel, grid_dim, block_dim, biharmonic_operator_args, 0, stream));
+    check(cudaLaunchKernel(update_interior_kernel, grid_dim, block_dim, update_interior_args, 0, stream));
 }
 
 } // namespace device
