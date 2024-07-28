@@ -190,13 +190,50 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
                         (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                         (zsize + (block_dim.z - 1)) / block_dim.z);
 
-   // Kernel argument arrays:
+    // Kernel argument arrays:
     void *biharmonic_operator_args[] = {&u, &v, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
     void *update_interior_args[] = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
 
     // Launch kernels:
     check(cudaLaunchKernel(biharmonic_operator_kernel, grid_dim, block_dim, biharmonic_operator_args, 0, stream));
     check(cudaLaunchKernel(update_interior_kernel, grid_dim, block_dim, update_interior_args, 0, stream));
+}
+
+
+// update_interior_biharmonic_shared<T>():
+// Performs the fourth-order diffusion update in the interior of the domain using a single 13-point biharmonic stencil and no shared memory.
+//
+// Input:   stream              :: CUDA stream used
+//          u                   :: Input field (located on the device)
+//          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
+//          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
+//          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
+//          T                   :: Numeric real type
+// Output:  u                   :: Output field (located on the device)
+template<typename T>
+void update_interior_biharmonic_shared(cudaStream_t &stream, T *u, T alpha, std::size_t xmin,
+                                       std::size_t xmax, std::size_t ymin, std::size_t ymax,
+                                       std::size_t xsize, std::size_t ysize, std::size_t zsize) {
+
+    // Kernel pointers:
+    const void *biharmonic_operator_kernel_shared = reinterpret_cast<void*>(kernels::biharmonic_operator_shared<T>);
+
+    // Block dimensions:
+    constexpr dim3 block_dim(16, 16, 1);
+
+    // Grid dimensions:
+    const dim3 grid_dim((xmax - xmin + (block_dim.x - 1)) / block_dim.x,
+                        (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
+                        (zsize + (block_dim.z - 1)) / block_dim.z);
+
+    // Kernel argument array:
+    void *biharmonic_operator_args[] = {&u, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+
+    // Shared memory size:
+    constexpr std::size_t shared_size = (block_dim.x + 4) * (block_dim.y + 4) * sizeof(T);
+
+    // Launch kernel:
+    check(cudaLaunchKernel(biharmonic_operator_kernel_shared, grid_dim, block_dim, biharmonic_operator_args, shared_size, stream));
 }
 
 } // namespace device

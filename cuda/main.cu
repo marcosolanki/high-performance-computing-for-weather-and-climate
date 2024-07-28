@@ -76,6 +76,13 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
             }
             break;
         }
+        case Mode::biharm_shared: {
+            for(std::size_t i = 0; i < itrs; ++i) {
+                device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+                device::update_interior_biharmonic_shared(stream, u, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
+            }
+            break;
+        }
         default: __builtin_unreachable();
     }
     device::update_boundaries(stream, u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
