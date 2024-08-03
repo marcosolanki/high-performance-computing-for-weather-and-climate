@@ -211,12 +211,13 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
 //          T                   :: Numeric real type
 // Output:  u                   :: Output field (located on the device)
 template<typename T>
-void update_interior_biharmonic_shared(cudaStream_t &stream, T *u, T alpha, std::size_t xmin,
+void update_interior_biharmonic_shared(cudaStream_t &stream, T *u, T *v, T alpha, std::size_t xmin,
                                        std::size_t xmax, std::size_t ymin, std::size_t ymax,
                                        std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
     // Kernel pointers:
     const void *biharmonic_operator_kernel_shared = reinterpret_cast<void*>(kernels::biharmonic_operator_shared<T>);
+    const void *update_interior_kernel = reinterpret_cast<void*>(kernels::update_interior<T>);
 
     // Block dimensions:
     constexpr dim3 block_dim(16, 16, 1);
@@ -227,13 +228,15 @@ void update_interior_biharmonic_shared(cudaStream_t &stream, T *u, T alpha, std:
                         (zsize + (block_dim.z - 1)) / block_dim.z);
 
     // Kernel argument array:
-    void *biharmonic_operator_args[] = {&u, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+    void *biharmonic_operator_args[] = {&u, &v, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+    void *update_interior_args[]     = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
 
     // Shared memory size:
     constexpr std::size_t shared_size = (block_dim.x + 4) * (block_dim.y + 4) * sizeof(T);
 
     // Launch kernel:
     check(cudaLaunchKernel(biharmonic_operator_kernel_shared, grid_dim, block_dim, biharmonic_operator_args, shared_size, stream));
+    check(cudaLaunchKernel(update_interior_kernel, grid_dim, block_dim, update_interior_args, 0, stream));    
 }
 
 } // namespace device
