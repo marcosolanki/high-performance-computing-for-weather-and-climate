@@ -35,7 +35,6 @@ void error_routine(char *errmsg) {
 enum class Mode {
     kernels,
     parallel,
-    optimised,
     invalid
 };
 
@@ -51,7 +50,7 @@ void print_args_errmsg() {
     std::cerr << " nz  :: Amount of (interior) points in z-direction. Must be >0.\n";
     std::cerr << "bdry :: Boundary width. Must be >1.\n";
     std::cerr << "itrs :: Number of diffusive timesteps to perform. Must be >0.\n";
-    std::cerr << "mode :: Computation mode. Must be \"kernels\", \"parallel\" or \"optimised\".\n";
+    std::cerr << "mode :: Computation mode. Must be \"kernels\" or \"parallel\".\n";
     std::cerr << "================================================================================\n";
     std::cerr << "Input syntax: ./main <nx> <ny> <nz> <bdry> <itrs> <mode>\n";
     std::cerr << "================================================================================\n";
@@ -63,7 +62,6 @@ Mode mode_from_string(const char *s) {
     std::string mode(s);
     if(mode == "kernels") return Mode::kernels;
     if(mode == "parallel") return Mode::parallel;
-    if(mode == "optimised") return Mode::optimised;
     return Mode::invalid;
 }
 
@@ -73,7 +71,6 @@ std::string get_mode_desc(Mode mode) {
     switch(mode) {
         case Mode::kernels: return "OpenACC acceleration using only \"kernels\" pragmas.";
         case Mode::parallel: return "OpenACC acceleration using only \"parallel loop collapse\" pragmas.";
-        case Mode::optimised: return "OpenACC acceleration using all possible pragmas.";
         default: __builtin_unreachable();
     }
 }

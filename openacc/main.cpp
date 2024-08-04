@@ -1,7 +1,6 @@
 #include "host.hpp"
 #include "kernels.hpp"
 #include "parallel.hpp"
-#include "optimised.hpp"
 
 #include <chrono>
 #include <fstream>
@@ -73,14 +72,6 @@ double run_simulation(std::size_t xsize, std::size_t ysize, std::size_t zsize, s
                     parallel::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 }
                 parallel::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
-                break;
-            }
-            case Mode::optimised: {
-                for(std::size_t i = 0; i < itrs; ++i) {
-                    optimised::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
-                    optimised::update_interior(u, v, alpha, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
-                }
-                optimised::update_boundaries(u, xmin, xmax, ymin, ymax, xsize, ysize, zsize);
                 break;
             }
             default: __builtin_unreachable();
