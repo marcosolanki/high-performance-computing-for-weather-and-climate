@@ -28,10 +28,10 @@ void update_boundaries(cudaStream_t &stream, T *u,
     const void *update_east_kernel = reinterpret_cast<void*>(kernels::update_east<T>);
 
     // Block dimensions:
-    constexpr dim3 block_dim_south(64, 1, 1);
-    constexpr dim3 block_dim_north(64, 1, 1);
-    const dim3 block_dim_west(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
-    const dim3 block_dim_east(xmin, std::max(static_cast<std::size_t>(64 / xmin + 0.5), static_cast<std::size_t>(1)), 1);
+    const dim3 block_dim_south(std::min(xmax - xmin, static_cast<std::size_t>(256)), 1, 1);
+    const dim3 block_dim_north(std::min(xmax - xmin, static_cast<std::size_t>(256)), 1, 1);
+    const dim3 block_dim_west(xmin, std::max(256 / xmin, static_cast<std::size_t>(1)), 1);
+    const dim3 block_dim_east(xmin, std::max(256 / xmin, static_cast<std::size_t>(1)), 1);
 
     // Grid dimensions:
     const dim3 grid_dim_south((xmax - xmin + (block_dim_south.x - 1)) / block_dim_south.x,
@@ -86,7 +86,7 @@ void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha,
     const void *laplacian_update_kernel = reinterpret_cast<void*>(kernels::laplacian_update<T>);
 
     // Block dimensions:
-    constexpr dim3 block_dim(8, 8, 1);
+    constexpr dim3 block_dim(16, 16, 1);
 
     // Grid dimensions:
     const dim3 grid_dim_lap((xmax - xmin + 2 + (block_dim.x - 1)) / block_dim.x,
@@ -133,7 +133,7 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
     const void *laplacian_shared_update_kernel = reinterpret_cast<void*>(kernels::laplacian_shared_update<T>);
 
     // Block dimensions:
-    constexpr dim3 block_dim(8, 8, 1);
+    constexpr dim3 block_dim(16, 16, 1);
 
     // Grid dimensions:
     const dim3 grid_dim_lap((xmax - xmin + 2 + (block_dim.x - 1)) / block_dim.x,
@@ -183,7 +183,7 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
     const void *update_interior_kernel = reinterpret_cast<void*>(kernels::update_interior<T>);
 
     // Block dimensions:
-    constexpr dim3 block_dim(8, 8, 1);
+    constexpr dim3 block_dim(16, 16, 1);
 
     // Grid dimensions:
     const dim3 grid_dim((xmax - xmin + (block_dim.x - 1)) / block_dim.x,
@@ -205,6 +205,7 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
 //
 // Input:   stream              :: CUDA stream used
 //          u                   :: Input field (located on the device)
+//          v                   :: Temporary field to store intermediate results in (located on the device)
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
@@ -216,7 +217,7 @@ void update_interior_biharmonic_shared(cudaStream_t &stream, T *u, T *v, T alpha
                                        std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
     // Kernel pointers:
-    const void *biharmonic_operator_kernel_shared = reinterpret_cast<void*>(kernels::biharmonic_operator_shared<T>);
+    const void *biharmonic_operator_shared_kernel = reinterpret_cast<void*>(kernels::biharmonic_operator_shared<T>);
     const void *update_interior_kernel = reinterpret_cast<void*>(kernels::update_interior<T>);
 
     // Block dimensions:
@@ -227,15 +228,15 @@ void update_interior_biharmonic_shared(cudaStream_t &stream, T *u, T *v, T alpha
                         (ymax - ymin + (block_dim.y - 1)) / block_dim.y,
                         (zsize + (block_dim.z - 1)) / block_dim.z);
 
-    // Kernel argument array:
+    // Kernel argument arrays:
     void *biharmonic_operator_args[] = {&u, &v, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
-    void *update_interior_args[]     = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
+    void *update_interior_args[] = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
 
     // Shared memory size:
     constexpr std::size_t shared_size = (block_dim.x + 4) * (block_dim.y + 4) * sizeof(T);
 
-    // Launch kernel:
-    check(cudaLaunchKernel(biharmonic_operator_kernel_shared, grid_dim, block_dim, biharmonic_operator_args, shared_size, stream));
+    // Launch kernels:
+    check(cudaLaunchKernel(biharmonic_operator_shared_kernel, grid_dim, block_dim, biharmonic_operator_args, shared_size, stream));
     check(cudaLaunchKernel(update_interior_kernel, grid_dim, block_dim, update_interior_args, 0, stream));    
 }
 
