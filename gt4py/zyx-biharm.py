@@ -88,11 +88,13 @@ def apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs):
         # Boundary update:
         boundary_update(v, bdry)
 
-        # Right edge update (for some reason necessary to make results match with CuPy):
+        # East boundary update (for some reason necessary to make results match with CuPy;
+        #                       only necessary for the GT4Py version installed on Piz Daint):
         v[:, :, -bdry:] = v[:, :, bdry:2*bdry]
 
     else:
-        # Right edge update (for some reason necessary to make results match with CuPy):
+        # East boundary update (for some reason necessary to make results match with CuPy;
+        #                       only necessary for the GT4Py version installed on Piz Daint):
         u[:, :, -bdry:] = u[:, :, bdry:2*bdry]
 
 
@@ -102,9 +104,9 @@ def apply_diffusion(diffusion_stencil, u, v, alpha, bdry, itrs):
 @click.option('-nz', type=int, required=True, help='Number of gridpoints in z-direction')
 @click.option('-itrs', type=int, required=True, help='Number of iterations')
 @click.option('-bdry', type=int, default=2, help='Number of boundary points in x- and y-direction')
-@click.option('-bknd', type=str, required=False, default='numpy', help='GT4Py backend')
+@click.option('-bknd', type=str, required=False, default='cuda', help='GT4Py backend')
 
-def main(nx=128, ny=128, nz=64, itrs=1024, bdry=2, bknd='numpy'):
+def main(nx=128, ny=128, nz=64, itrs=1024, bdry=2, bknd='cuda'):
     """Driver for apply_diffusion that sets up fields and does timings."""
 
     assert 0 < nx <= 1024 * 1024, 'You have to specify a reasonable value for nx'
