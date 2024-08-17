@@ -66,18 +66,16 @@ __global__ void update_north(T *u, std::size_t xmin, std::size_t xmax, std::size
 //
 // Input:   u                   :: Input field (located on the device)
 //          xmin                :: i must be >= xmin to access an interior point (i, j, k)
-//          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xint                :: Width of the interior of the domain in x direction
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
 //          T                   :: Numeric real type
 // Output:  u                   :: Output field (located on the device)
 template<typename T>
-__global__ void update_west(T *u, std::size_t xmin, std::size_t ymin, std::size_t ymax,
-                            std::size_t xint, std::size_t xsize, std::size_t ysize, std::size_t zsize) {
+__global__ void update_west(T *u, std::size_t xmin, std::size_t xint, std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
     // Ranges:
     // i in [0, xmin[
-    // j in [ymin, ymax[
+    // j in [0, ysize[
     // k in [0, zsize[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -94,18 +92,16 @@ __global__ void update_west(T *u, std::size_t xmin, std::size_t ymin, std::size_
 //
 // Input:   u                   :: Input field (located on the device)
 //          xmax                :: i must be < xmax to access an interior point (i, j, k)
-//          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xint                :: Width of the interior of the domain in x direction
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
 //          T                   :: Numeric real type
 // Output:  u                   :: Output field (located on the device)
 template<typename T>
-__global__ void update_east(T *u, std::size_t xmax, std::size_t ymin, std::size_t ymax,
-                            std::size_t xint, std::size_t xsize, std::size_t ysize, std::size_t zsize) {
+__global__ void update_east(T *u, std::size_t xmax, std::size_t xint, std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
     // Ranges:
     // i in [xmax, xsize[
-    // j in [ymin, ymax[
+    // j in [0, ysize[
     // k in [0, zsize[
 
     const std::size_t i = blockDim.x * blockIdx.x + threadIdx.x + xmax;
@@ -153,6 +149,7 @@ __global__ void laplacian(const T *u, T *v, std::size_t xmin, std::size_t xmax, 
 //
 // Input:   u                   :: Input field (located on the device)
 //          v                   :: Laplacian of the input field (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
@@ -234,6 +231,7 @@ __global__ void laplacian_shared(const T *u, T *v, std::size_t xmin, std::size_t
 //
 // Input:   u                   :: Input field (located on the device)
 //          v                   :: Laplacian of the input field (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
@@ -383,6 +381,7 @@ __global__ void biharmonic_operator_shared(const T *u, T *v, std::size_t xmin, s
 //
 // Input:   u                   :: Input field (located on the device)
 //          v                   :: Biharmonic operator of the input field (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)

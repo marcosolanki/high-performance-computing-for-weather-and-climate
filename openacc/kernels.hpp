@@ -55,6 +55,7 @@ void update_boundaries(T *u, std::size_t xmin, std::size_t xmax, std::size_t ymi
 //
 // Input:   u                   :: Input field (located on the device)
 //          v                   :: Temporary field to store intermediate results in (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)

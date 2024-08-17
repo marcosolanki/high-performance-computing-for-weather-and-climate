@@ -54,8 +54,8 @@ void update_boundaries(cudaStream_t &stream, T *u,
     // Kernel argument arrays:
     void *update_south_args[] = {&u, &xmin, &xmax, &ymin, &yint, &xsize, &ysize, &zsize};
     void *update_north_args[] = {&u, &xmin, &xmax, &ymax, &yint, &xsize, &ysize, &zsize};
-    void *update_west_args[] = {&u, &xmin, &ymin, &ymax, &xint, &xsize, &ysize, &zsize};
-    void *update_east_args[] = {&u, &xmax, &ymin, &ymax, &xint, &xsize, &ysize, &zsize};
+    void *update_west_args[] = {&u, &xmin, &xint, &xsize, &ysize, &zsize};
+    void *update_east_args[] = {&u, &xmax, &xint, &xsize, &ysize, &zsize};
 
     // Launch kernels:
     check(cudaLaunchKernel(update_south_kernel, grid_dim_south, block_dim_south, update_south_args, 0, stream));
@@ -71,6 +71,7 @@ void update_boundaries(cudaStream_t &stream, T *u,
 // Input:   stream              :: CUDA stream used
 //          u                   :: Input field (located on the device)
 //          v                   :: Temporary field to store intermediate results in (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
@@ -118,6 +119,7 @@ void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha,
 // Input:   stream              :: CUDA stream used
 //          u                   :: Input field (located on the device)
 //          v                   :: Temporary field to store intermediate results in (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
@@ -168,6 +170,7 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
 // Input:   stream              :: CUDA stream used
 //          u                   :: Input field (located on the device)
 //          v                   :: Temporary field to store intermediate results in (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
@@ -201,11 +204,12 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
 
 
 // update_interior_biharmonic_shared<T>():
-// Performs the fourth-order diffusion update in the interior of the domain using a single 13-point biharmonic stencil and no shared memory.
+// Performs the fourth-order diffusion update in the interior of the domain using a single 13-point biharmonic stencil and shared memory.
 //
 // Input:   stream              :: CUDA stream used
 //          u                   :: Input field (located on the device)
 //          v                   :: Temporary field to store intermediate results in (located on the device)
+//          alpha               :: Multiplier in the explicit Euler update
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
 //          ymin, ymax          :: j must be in [ymin, ymax[ to access an interior point (i, j, k)
 //          xsize, ysize, zsize :: Dimensions of the domain (including boundary points)

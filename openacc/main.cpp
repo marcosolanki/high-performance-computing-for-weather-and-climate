@@ -16,12 +16,12 @@ using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
 
 // run_simulation<T>():
-// Runs the 4th-order diffusion simulation on a CUDA-enabled GPU and writes its results to some output files.
+// Runs the 4th-order diffusion simulation on an OpenACC-enabled device and writes its results to some output files.
 //
 // Input:   xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
 //          itrs                :: Number of timestep iterations
 //          bdry                :: Number of boundary points
-//          mode                :: Acceleration mode (kernels-based, parallel-based or unrestricted)
+//          mode                :: Acceleration mode (kernels-based or parallel-based)
 //          T                   :: Numeric real type
 // Output:  return (...)        :: Measured time (memory transfer + device allocation + computation) in seconds
 template<typename T>
