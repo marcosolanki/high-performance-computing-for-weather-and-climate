@@ -1,5 +1,7 @@
 # High-level, Mid-level, and Low-level GPU Programming Comparison
 
+**Authors:** [Marco Julian Solanki](https://github.com/marcosolanki), [Thibault Meier](https://github.com/tibo1291), and [Sebastian Heckers](https://github.com/seba-heck).
+
 _**Task:** Implement a CUDA and OpenACC version of stencil2d. Validate your results. Compare performance against the CuPy and GT4Py versions of the code for a single GPU socket for different domain sizes. If time permits, analyse and optimise the performance of the implementations._
 
 The latest versions of the here-featured codes can always be retrieved from [this project's GitHub page](https://github.com/marcosolanki/high-performance-computing-for-weather-and-climate).
@@ -64,14 +66,14 @@ Run a cell such as: `!python xyz-laplap.py -nx 128 -ny 128 -nz 64 -bdry 2 -itrs 
 # Testing and verification
 
 ## plot.py
-The script `scripts/plot.py` plots the input and output fields using the `in_field.npy`/`in_field.csv` and `out_field.npy`/`out_field.csv` files located within the directory from which it is called. These `*.npy`/`*.csv` files are automatically generated when running any of the provided backends (`cuda`/`openacc`/`cupy`/`gt4py`). A possible workflow would, therefore, be:
+The script `scripts/plot.py` plots the input and output fields using the `in_field.npy`/`in_field.csv` and `out_field.npy`/`out_field.csv` files located within the directory from which it is called. These `*.npy`/`*.csv` files are automatically generated when running any of the provided code versions (`cuda`/`openacc`/`cupy`/`gt4py`). A possible workflow would, therefore, be:
 ```
 cd cuda/ && make && ./main 128 128 64 2 1024 laplap-global
 python ../scripts/plot.py
 ```
 
 ## verify.py
-The script `scripts/verify.py` compares the `in_field.npy`/`in_field.csv` and `out_field.npy`/`out_field.csv` files produced by two different backends. It computes the error between them, plots this error, and computes its $L^1$, $L^2$ and $L^\infty$ norms. A possible workflow would, therefore, be:
+The script `scripts/verify.py` compares the `in_field.npy`/`in_field.csv` and `out_field.npy`/`out_field.csv` files produced by two different code versions. It computes the error between them, plots this error, and computes its $L^1$, $L^2$ and $L^\infty$ norms. A possible workflow would, therefore, be:
 ```
 cd cuda/ && make && ./main 128 128 64 2 1024 laplap-global && cd ../
 cd openacc/ && make && ./main 128 128 64 2 1024 parallel && cd ../
