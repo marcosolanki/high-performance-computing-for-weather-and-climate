@@ -57,7 +57,7 @@ void update_boundaries(cudaStream_t &stream, T *u,
     void *update_west_args[] = {&u, &xmin, &xint, &xsize, &ysize, &zsize};
     void *update_east_args[] = {&u, &xmax, &xint, &xsize, &ysize, &zsize};
 
-    // Launch kernels:
+    // Kernel launches:
     check(cudaLaunchKernel(update_south_kernel, grid_dim_south, block_dim_south, update_south_args, 0, stream));
     check(cudaLaunchKernel(update_north_kernel, grid_dim_north, block_dim_north, update_north_args, 0, stream));
     check(cudaLaunchKernel(update_west_kernel, grid_dim_west, block_dim_west, update_west_args, 0, stream));
@@ -107,7 +107,7 @@ void update_interior_double_laplacian(cudaStream_t &stream, T *u, T *v, T alpha,
     void *laplacian_args[] = {&u, &v, &xmin_lap, &xmax_lap, &ymin_lap, &ymax_lap, &xsize, &ysize, &zsize};
     void *laplacian_update_args[] = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
 
-    // Launch kernels:
+    // Kernel launches:
     check(cudaLaunchKernel(laplacian_kernel, grid_dim_lap, block_dim, laplacian_args, 0, stream));
     check(cudaLaunchKernel(laplacian_update_kernel, grid_dim_int, block_dim, laplacian_update_args, 0, stream));
 }
@@ -158,7 +158,7 @@ void update_interior_double_laplacian_shared(cudaStream_t &stream, T *u, T *v, T
     // Shared memory size:
     constexpr std::size_t shared_size = (block_dim.x + 2) * (block_dim.y + 2) * sizeof(T);
 
-    // Launch kernels:
+    // Kernel launches:
     check(cudaLaunchKernel(laplacian_shared_kernel, grid_dim_lap, block_dim, laplacian_shared_args, shared_size, stream));
     check(cudaLaunchKernel(laplacian_shared_update_kernel, grid_dim_int, block_dim, laplacian_shared_update_args, shared_size, stream));
 }
@@ -197,7 +197,7 @@ void update_interior_biharmonic(cudaStream_t &stream, T *u, T *v, T alpha, std::
     void *biharmonic_operator_args[] = {&u, &v, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
     void *update_interior_args[] = {&u, &v, &alpha, &xmin, &xmax, &ymin, &ymax, &xsize, &ysize, &zsize};
 
-    // Launch kernels:
+    // Kernel launches:
     check(cudaLaunchKernel(biharmonic_operator_kernel, grid_dim, block_dim, biharmonic_operator_args, 0, stream));
     check(cudaLaunchKernel(update_interior_kernel, grid_dim, block_dim, update_interior_args, 0, stream));
 }
@@ -239,9 +239,9 @@ void update_interior_biharmonic_shared(cudaStream_t &stream, T *u, T *v, T alpha
     // Shared memory size:
     constexpr std::size_t shared_size = (block_dim.x + 4) * (block_dim.y + 4) * sizeof(T);
 
-    // Launch kernels:
+    // Kernel launches:
     check(cudaLaunchKernel(biharmonic_operator_shared_kernel, grid_dim, block_dim, biharmonic_operator_args, shared_size, stream));
-    check(cudaLaunchKernel(update_interior_kernel, grid_dim, block_dim, update_interior_args, 0, stream));    
+    check(cudaLaunchKernel(update_interior_kernel, grid_dim, block_dim, update_interior_args, 0, stream));
 }
 
 } // namespace device

@@ -71,7 +71,8 @@ __global__ void update_north(T *u, std::size_t xmin, std::size_t xmax, std::size
 //          T                   :: Numeric real type
 // Output:  u                   :: Output field (located on the device)
 template<typename T>
-__global__ void update_west(T *u, std::size_t xmin, std::size_t xint, std::size_t xsize, std::size_t ysize, std::size_t zsize) {
+__global__ void update_west(T *u, std::size_t xmin, std::size_t xint,
+                            std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
     // Ranges:
     // i in [0, xmin[
@@ -97,7 +98,8 @@ __global__ void update_west(T *u, std::size_t xmin, std::size_t xint, std::size_
 //          T                   :: Numeric real type
 // Output:  u                   :: Output field (located on the device)
 template<typename T>
-__global__ void update_east(T *u, std::size_t xmax, std::size_t xint, std::size_t xsize, std::size_t ysize, std::size_t zsize) {
+__global__ void update_east(T *u, std::size_t xmax, std::size_t xint,
+                            std::size_t xsize, std::size_t ysize, std::size_t zsize) {
 
     // Ranges:
     // i in [xmax, xsize[

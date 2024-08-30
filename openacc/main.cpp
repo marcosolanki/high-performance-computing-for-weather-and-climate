@@ -21,7 +21,7 @@ using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 // Input:   xsize, ysize, zsize :: Dimensions of the domain (including boundary points)
 //          itrs                :: Number of timestep iterations
 //          bdry                :: Number of boundary points
-//          mode                :: Acceleration mode (kernels-based or parallel-based)
+//          mode                :: Acceleration mode (using "kernels" or "parallel" pragmas)
 //          T                   :: Numeric real type
 // Output:  return (...)        :: Measured time (memory transfer + device allocation + computation) in seconds
 template<typename T>

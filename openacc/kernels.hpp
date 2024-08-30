@@ -5,8 +5,8 @@
 
 namespace kernels {
 
-// update_boundaries<T>():
-// Enforces periodic boundary conditions in x and y.
+// kernels::update_boundaries<T>():
+// Enforces periodic boundary conditions in x and y (using "kernels" pragmas).
 //
 // Input:   u                   :: Input field (located on the device)
 //          xmin, xmax          :: i must be in [xmin, xmax[ to access an interior point (i, j, k)
@@ -50,8 +50,8 @@ void update_boundaries(T *u, std::size_t xmin, std::size_t xmax, std::size_t ymi
 }
 
 
-// update_interior<T>():
-// Performs the fourth-order diffusion update in the interior of the domain using two consecutive 5-point Laplacian stencils.
+// kernels::update_interior<T>():
+// Performs the fourth-order diffusion update in the interior of the domain using two consecutive 5-point Laplacian stencils (using "kernels" pragmas).
 //
 // Input:   u                   :: Input field (located on the device)
 //          v                   :: Temporary field to store intermediate results in (located on the device)

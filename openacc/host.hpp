@@ -22,8 +22,6 @@ void initialise(T *u_host, std::size_t xsize, std::size_t ysize, std::size_t zsi
     const std::size_t imax = 0.75 * xsize + 0.5;
     const std::size_t jmin = 0.25 * ysize + 0.5;
     const std::size_t jmax = 0.75 * ysize + 0.5;
-    const std::size_t kmin = 0.25 * zsize + 0.5;
-    const std::size_t kmax = 0.75 * zsize + 0.5;
 
     for(std::size_t k = 0; k < zsize; ++k)
         for(std::size_t j = 0; j < ysize; ++j)
